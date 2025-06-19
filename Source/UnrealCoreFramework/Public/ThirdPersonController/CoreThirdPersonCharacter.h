@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Game/Base/CoreCharacter.h"
 
 #include "CoreThirdPersonCharacter.generated.h"

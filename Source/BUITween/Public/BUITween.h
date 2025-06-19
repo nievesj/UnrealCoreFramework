@@ -1,9 +1,12 @@
 #pragma once
 
+#include "CoreMinimal.h"
+
 #include "BUIEasing.h"
 #include "BUITweenInstance.h"
 #include "Components/Widget.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "UObject/UObjectGlobals.h"
 
 #include "BUITween.generated.h"
 
@@ -63,7 +66,17 @@ public:
 	static UBUIParamChain* CreateAnimationParams(UWidget* InWidget, const float InDuration = 1.0f, const float InDelay = 0.0f, const bool bIsAdditive = false)
 	{
 		FBUITweenInstance& Tween = UBUITween::Create(InWidget, InDuration, InDelay, bIsAdditive);
-		UBUIParamChain* Params = NewObject<UBUIParamChain>(GetTransientPackage(), TEXT(""), RF_MarkAsRootSet);
+		// UBUIParamChain* Params = NewObject<UBUIParamChain>(GetTransientPackage(), TEXT(""), RF_MarkAsRootSet);
+		// UBUIParamChain* Params = NewObject<UBUIParamChain>(GetTransientPackage(), UBUIParamChain::StaticClass(), TEXT(""), RF_MarkAsRootSet);
+
+		// UBUIParamChain* Params = NewObject<UBUIParamChain>(GetTransientPackage(), UBUIParamChain::StaticClass(), NAME_None, RF_MarkAsRootSet);
+
+		UBUIParamChain* Params = NewObject<UBUIParamChain>();
+		if (Params)
+		{
+			Params->SetFlags(RF_MarkAsRootSet);
+		}
+
 		Params->TweenInstance = &Tween;
 		return Params;
 	}

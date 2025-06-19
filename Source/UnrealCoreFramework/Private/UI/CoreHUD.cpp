@@ -7,9 +7,7 @@ void ACoreHUD::ShowMainHUD()
 	UE_LOG(LogTemp, Log, TEXT("ShowMainHUD"));
 
 	// Make widget owned by our PlayerController
-	APlayerController* PC = Cast<APlayerController>(GetOwner());
-	MainPage = CreateWidget<UCoreWidget>(PC, MainPageClass);
-
+	MainPage = CreateWidget<UCoreWidget>(GetWorld(), MainPageClass);
 	MainPage->AddToViewport();
 }
 

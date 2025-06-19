@@ -1,6 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-#include "UI/CorePage.h"
+﻿#include "UI/CorePage.h"
 
 #include "Components/Button.h"
 #include "SubSystems/LocalPlayer/UISubsystem.h"
@@ -9,7 +7,11 @@ void UCorePage::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (const APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	const UWorld* World = GetWorld();
+	if (!IsValid(World))
+		return;
+
+	if (const APlayerController* PC = World->GetFirstPlayerController())
 	{
 		if (const ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
 		{
@@ -21,22 +23,32 @@ void UCorePage::NativeConstruct()
 void UCorePage::NativeDestruct()
 {
 	Super::NativeDestruct();
+	DisablePlayerControllerInput = false;
 }
 
 void UCorePage::InternalShown()
 {
-	Super::InternalShown();
-
 	if (ExitButton)
 	{
 		ExitButton->OnClicked.AddDynamic(this, &UCorePage::Handle_OnExitButtonClicked);
 	}
+	Super::InternalShown();
 }
 
 void UCorePage::InternalHidden()
 {
 	Super::InternalHidden();
-	UISubsystem->RemovePage(this);
+}
+
+void UCorePage::NativeOnActivated()
+{
+	Super::NativeOnActivated();
+}
+
+void UCorePage::NativeOnDeactivated()
+{
+	Super::NativeOnDeactivated();
+	DisablePlayerControllerInput = false;
 }
 
 void UCorePage::Handle_OnExitButtonClicked()

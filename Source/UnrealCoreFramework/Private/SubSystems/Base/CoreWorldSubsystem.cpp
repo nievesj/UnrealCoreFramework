@@ -32,7 +32,7 @@ void UCoreWorldSubsystem::OnWorldComponentsUpdated(UWorld& World)
 
 void UCoreWorldSubsystem::UpdateStreamingState()
 {
-	Super::UpdateStreamingState();
+	// Super::UpdateStreamingState();
 }
 
 void UCoreWorldSubsystem::Deinitialize()
@@ -41,7 +41,7 @@ void UCoreWorldSubsystem::Deinitialize()
 	UE_LOG(LogCoreWorldSubsystem, Log, TEXT("Initialize UCoreWorldSubsystem"));
 }
 
-TFuture<void> UCoreWorldSubsystem::SlowTaskAsync()
+/*TFuture<void> UCoreWorldSubsystem::SlowTaskAsync()
 {
 	return Async(
 			   EAsyncExecution::TaskGraphMainThread,
@@ -56,4 +56,4 @@ TFuture<void> UCoreWorldSubsystem::SlowTaskAsync()
 				// DoSomethingElseAfterward();
 			}
 		);
-}
+}*/

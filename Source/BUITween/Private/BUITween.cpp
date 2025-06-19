@@ -2,7 +2,7 @@
 
 TArray<FBUITweenInstance> UBUITween::ActiveInstances = TArray<FBUITweenInstance>();
 TArray<FBUITweenInstance> UBUITween::InstancesToAdd = TArray<FBUITweenInstance>();
-bool UBUITween::bIsInitialized = false;
+bool					  UBUITween::bIsInitialized = false;
 
 void UBUITween::Startup()
 {

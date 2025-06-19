@@ -55,9 +55,9 @@ void FBUITweenInstance::Begin()
 	{
 		CanvasPositionProp.OnBegin(CanvasSlot->GetPosition());
 	}
-	UOverlaySlot* OverlaySlot = Cast<UOverlaySlot>(pWidget->Slot);
+	UOverlaySlot*		OverlaySlot = Cast<UOverlaySlot>(pWidget->Slot);
 	UHorizontalBoxSlot* HorizontalBoxSlot = Cast<UHorizontalBoxSlot>(pWidget->Slot);
-	UVerticalBoxSlot* VerticalBoxSlot = Cast<UVerticalBoxSlot>(pWidget->Slot);
+	UVerticalBoxSlot*	VerticalBoxSlot = Cast<UVerticalBoxSlot>(pWidget->Slot);
 	if (OverlaySlot)
 	{
 		PaddingProp.OnBegin(FVector4(OverlaySlot->GetPadding().Left, OverlaySlot->GetPadding().Top, OverlaySlot->GetPadding().Bottom, OverlaySlot->GetPadding().Right));
@@ -115,7 +115,7 @@ void FBUITweenInstance::Update(float DeltaTime)
 		bIsComplete = true;
 	}
 
-	const float EasedAlpha = EasingParam.IsSet() ? FBUIEasing::Ease(EasingType, Alpha, Duration, EasingParam.GetValue()) : FBUIEasing::Ease(EasingType, Alpha, Duration);
+	const float EasedAlpha = FBUIEasing::Ease(EasingType, Alpha, Duration);
 
 	Apply(EasedAlpha);
 }
@@ -159,7 +159,7 @@ void FBUITweenInstance::Apply(float EasedAlpha)
 		}
 	}
 
-	bool bChangedRenderTransform = false;
+	bool			 bChangedRenderTransform = false;
 	FWidgetTransform CurrentTransform = Target->GetRenderTransform();
 
 	if (TranslationProp.IsSet())
@@ -195,9 +195,9 @@ void FBUITweenInstance::Apply(float EasedAlpha)
 	{
 		if (PaddingProp.Update(EasedAlpha))
 		{
-			UOverlaySlot* OverlaySlot = Cast<UOverlaySlot>(pWidget->Slot);
+			UOverlaySlot*		OverlaySlot = Cast<UOverlaySlot>(pWidget->Slot);
 			UHorizontalBoxSlot* HorizontalBoxSlot = Cast<UHorizontalBoxSlot>(pWidget->Slot);
-			UVerticalBoxSlot* VerticalBoxSlot = Cast<UVerticalBoxSlot>(pWidget->Slot);
+			UVerticalBoxSlot*	VerticalBoxSlot = Cast<UVerticalBoxSlot>(pWidget->Slot);
 			if (OverlaySlot)
 				OverlaySlot->SetPadding(PaddingProp.CurrentValue);
 			else if (HorizontalBoxSlot)

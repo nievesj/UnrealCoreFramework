@@ -1,27 +1,28 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+﻿#pragma once
 
-#pragma once
-
+#include "AnimatableWidgetInterface.h"
 #include "Blueprint/UserWidget.h"
-#include "CoreMinimal.h"
+#include "CommonActivatableWidget.h"
 #include "UiCoreFrameworkTypes.h"
 
 #include "CoreWidget.generated.h"
 
+class UTweenManagerSubsystem;
+class UWidgetAnimationHelper;
 class UCanvasPanel;
 class UUISubsystem;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogCoreWidget, Log, All);
 
-UCLASS(Abstract, editinlinenew, BlueprintType, Blueprintable, meta = (DontUseGenericSpawnObject = "True", DisableNativeTick))
-class UNREALCOREFRAMEWORK_API UCoreWidget : public UUserWidget
+UCLASS(Abstract, Blueprintable, ClassGroup = UI, meta = (Category = "Core Framework UI", DisableNativeTick))
+class UNREALCOREFRAMEWORK_API UCoreWidget : public UCommonActivatableWidget, public IAnimatableWidgetInterface
 {
 	GENERATED_BODY()
 
 public:
+	UUMGSequencePlayer* GetSequencePlayer(UWidgetAnimation* InAnimation);
+	virtual void		NativePreConstruct() override;
 
-	UUISubsystem* GetUISubsystem();
-	
 	UFUNCTION(BlueprintCallable, Category = CoreWidget)
 	void Show();
 
@@ -34,40 +35,37 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = CoreWidget)
 	void OnHidden();
 
+	virtual FCoreWidgetAnimationSettings GetWidgetAnimationSettings() override
+	{
+		return CoreWidgetAnimationSettings;
+	}
+
 protected:
 	void PlayTweenTransition(const FWidgetTweenTransitionOptions& TweenTransitionOptions, const EWidgetTransitionMode WidgetTransitionMode);
 	void PlayWidgetAnimation(UWidgetAnimation* Anim, const FWidgetAnimationOptions& WidgetAnimationOptions, const EWidgetTransitionMode WidgetTransitionMode);
 
-	void Scale(const FWidgetTweenTransitionOptions& TweenTransitionOptions, const EWidgetTransitionMode WidgetTransitionMode);
-	void Translation(const FWidgetTweenTransitionOptions& TweenTransitionOptions, const EWidgetTransitionMode WidgetTransitionMode);
-	void Fade(const FWidgetTweenTransitionOptions& TweenTransitionOptions, const EWidgetTransitionMode);
-	void GetViewportTranslationVectors(EWidgetTranslationType WidgetTranslationType, FVector2D& OutStart, FVector2D& OutEnd);
-	void HandleOnWidgetAnimationCompleted(const EWidgetTransitionMode WidgetTransitionMode);
-	
+	/** Called when an animation begins playing on this widget */
+	virtual void OnAnimationStarted(const EWidgetTransitionMode& TransitionMode) override;
+
+	/** Called when an animation completes on this widget */
+	virtual void OnAnimationCompleted(const EWidgetTransitionMode& TransitionMode) override;
+
+	/** Whether animations should be played for this widget */
+	virtual bool ShouldPlayAnimations() const override { return true; }
+
+	virtual void NativeOnActivated() override;
+	virtual void NativeOnDeactivated() override;
+
 	virtual void InternalShown();
 	virtual void InternalHidden();
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CoreWidget)
-	EWidgetAnimationType WidgetAnimationType = EWidgetAnimationType::WidgetTween;
+	bool bDestroyOnDeactivated = false;
 
-	UPROPERTY(BlueprintReadWrite, Category = CoreWidget, meta = (BindWidgetOptional))
-	UCanvasPanel* CanvasPanel;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CoreWidget)
+	FCoreWidgetAnimationSettings CoreWidgetAnimationSettings;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CoreWidget, meta = (EditCondition = "WidgetAnimationType == EWidgetAnimationType::WidgetTween"))
-	FWidgetTweenTransitionOptions TweenEntranceOptions;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CoreWidget, meta = (EditCondition = "WidgetAnimationType == EWidgetAnimationType::WidgetTween"))
-	FWidgetTweenTransitionOptions TweenExitOptions;
-
-	UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite, Category = CoreWidget, meta = (BindWidgetAnimOptional, EditCondition = "WidgetAnimationType == EWidgetAnimationType::WidgetAnimation"))
-	UWidgetAnimation* WidgetAnimationIntro;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CoreWidget, meta = (BindWidgetAnimOptional, EditCondition = "WidgetAnimationType == EWidgetAnimationType::WidgetAnimation"))
-	FWidgetAnimationOptions WidgetAnimationOptionsIntro;
-
-	UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite, Category = CoreWidget, meta = (BindWidgetAnimOptional, EditCondition = "WidgetAnimationType == EWidgetAnimationType::WidgetAnimation"))
-	UWidgetAnimation* WidgetAnimationOuttro;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CoreWidget, meta = (BindWidgetAnimOptional, EditCondition = "WidgetAnimationType == EWidgetAnimationType::WidgetAnimation"))
-	FWidgetAnimationOptions WidgetAnimationOptionsOuttro;
+	/** Helper object for managing animations */
+	UPROPERTY(Transient)
+	TObjectPtr<UTweenManagerSubsystem> TweenManagerSubsystem = nullptr;
 };
