@@ -1,8 +1,5 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
-#include "CoreMinimal.h"
 #include "CoreWidget.h"
 #include "GameFramework/HUD.h"
 
@@ -18,10 +15,10 @@ class UNREALCOREFRAMEWORK_API ACoreHUD : public AHUD
 
 public:
 	UFUNCTION(BlueprintCallable, Category = UnrealCoreFrameworkSettings)
-	void ShowMainHUD();
+	virtual void ShowMainHUD();
 
 	UFUNCTION(BlueprintCallable, Category = UnrealCoreFrameworkSettings)
-	void HideMainHUD();
+	virtual void HideMainHUD();
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = UnrealCoreFrameworkSettings, Meta = (DisplayName = "Main HUD Class"))

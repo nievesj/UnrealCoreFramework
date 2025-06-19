@@ -2,12 +2,13 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "SubSystems/Base/CoreLocalPlayerSubsystem.h"
 #include "UI/PageableWidgetInterface.h"
 
 #include "UISubsystem.generated.h"
 
+enum class EWidgetContainerType : uint8;
+class UMainUiContainer;
 class UCorePage;
 class ACorePlayerController;
 class UCoreWidget;
@@ -28,22 +29,32 @@ class UNREALCOREFRAMEWORK_API UUISubsystem : public UCoreLocalPlayerSubsystem
 	GENERATED_BODY()
 
 public:
-	UCoreWidget* CreatePage(APlayerController* Owner, TSubclassOf<UCoreWidget> PageClass);
-	void RemovePage(IPageableWidgetInterface* Page);
-	void RemoveAllPages();
-	
+	UCoreWidget* CreateViewportPage(APlayerController* Owner, TSubclassOf<UCoreWidget> PageClass);
+	void		 RemoveViewportPage(IPageableWidgetInterface* Page);
+	void		 RemoveAllViewportPages();
+
+	UCoreWidget* AddWidgetToStack(const TSubclassOf<UCoreWidget>& PageClass, const EWidgetContainerType& StackContainerType);
+	void		 RemoveWidgetFromStack(UCoreWidget& Widget, const EWidgetContainerType& StackContainerType, bool Destroy = false);
+
 	IPageableWidgetInterface* GetTopPage();
-	void CreateMainPage(ECoreMainPageType MainPageType);
-	UCoreWidget* GetMainPage(ECoreMainPageType MainPageType);
+	void					  CreateMainUIContainer();
+
+	UMainUiContainer* GetMainUIContainer() const
+	{
+		return MainUiContainer;
+	};
 
 	bool ShouldDisablePlayerControllerInput();
 	void SetPlayerControllerInput(APlayerController* PC, bool IsDisabled);
 
-private:
-	UPROPERTY(Transient)
-	TArray<IPageableWidgetInterface*> CoreWidgetsOpen;
-
 protected:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
+
+private:
+	UPROPERTY(Transient)
+	TArray<UCoreWidget*> CoreWidgetsOpen;
+
+	UPROPERTY(Transient)
+	UMainUiContainer* MainUiContainer;
 };

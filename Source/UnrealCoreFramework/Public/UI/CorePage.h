@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "CoreWidget.h"
 #include "PageableWidgetInterface.h"
 
@@ -11,7 +10,7 @@
 class UButton;
 class UUISubsystem;
 
-UCLASS(Abstract, editinlinenew, BlueprintType, Blueprintable, meta = (DontUseGenericSpawnObject = "True", DisableNativeTick))
+UCLASS(Abstract, Blueprintable, ClassGroup = UI, meta = (Category = "Core Framework UI", DisableNativeTick))
 class UNREALCOREFRAMEWORK_API UCorePage : public UCoreWidget, public IPageableWidgetInterface
 {
 public:
@@ -26,13 +25,15 @@ protected:
 	virtual void NativeDestruct() override;
 	virtual void InternalShown() override;
 	virtual void InternalHidden() override;
+	virtual void NativeOnActivated() override;
+	virtual void NativeOnDeactivated() override;
 
 	UFUNCTION()
 	void Handle_OnExitButtonClicked();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = CorePage, meta = (BindWidgetOptional))
 	bool DisablePlayerInput = true;
-	
+
 	UPROPERTY(BlueprintReadWrite, Category = CorePage, meta = (BindWidgetOptional))
 	UButton* ExitButton;
 

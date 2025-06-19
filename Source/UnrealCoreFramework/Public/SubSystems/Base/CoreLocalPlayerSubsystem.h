@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Subsystems/LocalPlayerSubsystem.h"
 
 #include "CoreLocalPlayerSubsystem.generated.h"

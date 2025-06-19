@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "UObject/Interface.h"
 
 #include "PageableWidgetInterface.generated.h"
@@ -23,5 +22,5 @@ class UNREALCOREFRAMEWORK_API IPageableWidgetInterface
 public:
 	virtual void Open();
 	virtual void Close();
-	bool DisablePlayerControllerInput;
+	bool		 DisablePlayerControllerInput;
 };

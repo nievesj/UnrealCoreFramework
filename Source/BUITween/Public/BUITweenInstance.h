@@ -14,15 +14,15 @@ template <typename T>
 class TBUITweenProp
 {
 public:
-	bool bHasStart = false;
-	bool bHasTarget = false;
+	bool		bHasStart = false;
+	bool		bHasTarget = false;
 	inline bool IsSet() const
 	{
 		return bHasStart || bHasTarget;
 	}
-	T StartValue;
-	T TargetValue;
-	T CurrentValue;
+	T	 StartValue;
+	T	 TargetValue;
+	T	 CurrentValue;
 	bool bIsFirstTime = true;
 
 	void SetStart(T InStart)
@@ -61,15 +61,15 @@ template <typename T>
 class TBUITweenInstantProp
 {
 public:
-	bool bHasStart = false;
-	bool bHasTarget = false;
+	bool		bHasStart = false;
+	bool		bHasTarget = false;
 	inline bool IsSet() const
 	{
 		return bHasStart || bHasTarget;
 	}
-	T StartValue;
-	T TargetValue;
-	T CurrentValue;
+	T	 StartValue;
+	T	 TargetValue;
+	T	 CurrentValue;
 	bool bIsFirstTime = true;
 
 	void SetStart(T InStart)
@@ -121,7 +121,8 @@ public:
 	{
 	}
 
-	FBUITweenInstance(UWidget* pInWidget, float InDuration, float InDelay = 0) : pWidget(pInWidget), Duration(InDuration), Delay(InDelay)
+	FBUITweenInstance(UWidget* pInWidget, float InDuration, float InDelay = 0)
+		: pWidget(pInWidget), Duration(InDuration), Delay(InDelay)
 	{
 		ensure(pInWidget != nullptr);
 	}
@@ -322,22 +323,22 @@ protected:
 	bool bIsComplete = false;
 
 	TWeakObjectPtr<UWidget> pWidget = nullptr;
-	float Alpha = 0;
-	float Duration = 1;
-	float Delay = 0;
+	float					Alpha = 0;
+	float					Duration = 1;
+	float					Delay = 0;
 
-	EBUIEasingType EasingType = EBUIEasingType::InOutQuad;
+	EBUIEasingType	 EasingType = EBUIEasingType::Linear;
 	TOptional<float> EasingParam;
 
-	TBUITweenProp<FVector2D> TranslationProp;
-	TBUITweenProp<FVector2D> ScaleProp;
-	TBUITweenProp<FLinearColor> ColorProp;
-	TBUITweenProp<float> OpacityProp;
-	TBUITweenProp<float> RotationProp;
-	TBUITweenProp<FVector2D> CanvasPositionProp;
-	TBUITweenProp<FVector4> PaddingProp;	// FVector4 because FMath::Lerp does not support FMargin
+	TBUITweenProp<FVector2D>			   TranslationProp;
+	TBUITweenProp<FVector2D>			   ScaleProp;
+	TBUITweenProp<FLinearColor>			   ColorProp;
+	TBUITweenProp<float>				   OpacityProp;
+	TBUITweenProp<float>				   RotationProp;
+	TBUITweenProp<FVector2D>			   CanvasPositionProp;
+	TBUITweenProp<FVector4>				   PaddingProp; // FVector4 because FMath::Lerp does not support FMargin
 	TBUITweenInstantProp<ESlateVisibility> VisibilityProp;
-	TBUITweenProp<float> MaxDesiredHeightProp;
+	TBUITweenProp<float>				   MaxDesiredHeightProp;
 
 	FBUITweenSignature OnStartedDelegate;
 	FBUITweenSignature OnCompleteDelegate;

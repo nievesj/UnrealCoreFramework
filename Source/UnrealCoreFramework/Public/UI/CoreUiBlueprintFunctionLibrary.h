@@ -2,15 +2,16 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 
 #include "CoreUiBlueprintFunctionLibrary.generated.h"
 
+enum class EWidgetContainerType : uint8;
 class UCorePage;
+class UCoreWidget;
+
 DECLARE_LOG_CATEGORY_EXTERN(LogCoreUiFunctionLibrary, Log, All);
 
-class UCoreWidget;
 /**
  Blueprint library for the Core Framework UI System
  */
@@ -20,11 +21,17 @@ class UNREALCOREFRAMEWORK_API UCoreUiBlueprintFunctionLibrary : public UBlueprin
 	GENERATED_BODY()
 
 	UFUNCTION(BlueprintCallable, Category = CoreFrameworkUi, Meta = (DefaultToSelf = "Widget"))
-	static UCoreWidget* CreatePage(UCoreWidget* Widget, TSubclassOf<UCoreWidget> PageClass);
+	static UCoreWidget* CreateViewportPage(UCoreWidget* Widget, TSubclassOf<UCoreWidget> PageClass);
 
 	UFUNCTION(BlueprintCallable, Category = CoreFrameworkUi, Meta = (DefaultToSelf = "Widget"))
-	static void RemovePage(UCoreWidget* Widget, UCorePage* Page);
-	
+	static void RemoveViewportPage(UCoreWidget* Widget, UCorePage* Page);
+
+	UFUNCTION(BlueprintCallable, Category = CoreFrameworkUi, Meta = (DefaultToSelf = "Widget"))
+	static bool AddWidgetToStack(UCoreWidget* Widget, const TSubclassOf<UCoreWidget> PageClass, const EWidgetContainerType StackContainerType, UCoreWidget*& OutCoreWidget);
+
+	UFUNCTION(BlueprintCallable, Category = CoreFrameworkUi)
+	static void RemoveWidgetFromStack(UCoreWidget* Widget, const EWidgetContainerType& StackContainerType, bool Destroy = false);
+
 	UFUNCTION(BlueprintCallable, Category = CoreFrameworkUi, Meta = (DefaultToSelf = "Widget"))
 	static void CreateMainHUD(UCoreWidget* Widget);
 
@@ -36,4 +43,7 @@ class UNREALCOREFRAMEWORK_API UCoreUiBlueprintFunctionLibrary : public UBlueprin
 
 	UFUNCTION(BlueprintCallable, Category = CoreFrameworkUi, Meta = (DefaultToSelf = "Widget"))
 	static bool GetMainPage(UCoreWidget* Widget, ECoreMainPageType CoreMainPageType, UCoreWidget*& OutCoreWidget);
+
+	UFUNCTION(BlueprintCallable, Category = CoreFrameworkUi, Meta = (DefaultToSelf = "Widget"))
+	static bool CreatePrompt(UCoreWidget* Widget, const FText& PromptText, int PromptIndex, UCoreWidget*& OutPromptWidget);
 };

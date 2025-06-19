@@ -31,8 +31,8 @@ void UCoreGameInstance::OnStart()
 		if (const ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
 		{
 			UUISubsystem* UISubsystem = LocalPlayer->GetSubsystem<UUISubsystem>();
-			UISubsystem->CreateMainPage(ECoreMainPageType::MainHUD);
-			UE_VLOG_UELOG(this, LogCoreGameInstance, Log, TEXT("Created MainMenu"));
+			UISubsystem->CreateMainUIContainer();
+			UE_VLOG_UELOG(this, LogCoreGameInstance, Log, TEXT("Created Main UI Container"));
 		}
 	}
 }
@@ -57,6 +57,7 @@ void UCoreGameInstance::Shutdown()
 	// OnLocalPlayerAddedEvent.RemoveAll(this);
 }
 
+#if WITH_EDITOR
 FGameInstancePIEResult UCoreGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
 {
 	FGameInstancePIEResult Result = Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
@@ -64,12 +65,13 @@ FGameInstancePIEResult UCoreGameInstance::StartPlayInEditorGameInstance(ULocalPl
 	if (LocalPlayer)
 	{
 		UUISubsystem* UISubsystem = LocalPlayer->GetSubsystem<UUISubsystem>();
-		UISubsystem->CreateMainPage(ECoreMainPageType::MainHUD);
-		UE_VLOG_UELOG(this, LogCoreGameInstance, Log, TEXT("Created MainMenu"));
+		UISubsystem->CreateMainUIContainer();
+		UE_VLOG_UELOG(this, LogCoreGameInstance, Log, TEXT("Created Main UI Container"));
 	}
 
 	return Result;
 }
+#endif
 
 void UCoreGameInstance::OnLocalPlayerAdded(ULocalPlayer* LocalPlayer)
 {

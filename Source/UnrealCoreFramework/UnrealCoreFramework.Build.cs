@@ -6,8 +6,8 @@ public class UnrealCoreFramework : ModuleRules
 {
 	public UnrealCoreFramework(ReadOnlyTargetRules Target) : base(Target)
 	{
+		//IWYUSupport = IWYUSupport.Full;
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-
 		PublicIncludePaths.AddRange(
 			new string[]
 			{
@@ -15,14 +15,12 @@ public class UnrealCoreFramework : ModuleRules
 			}
 		);
 
-
 		PrivateIncludePaths.AddRange(
 			new string[]
 			{
 				// ... add other private include paths required here ...
 			}
 		);
-
 
 		PublicDependencyModuleNames.AddRange(
 			new string[]
@@ -35,16 +33,16 @@ public class UnrealCoreFramework : ModuleRules
 				"InputCore",
 				"Slate",
 				"UMG",
-				//"CommonUI",
-				"EditorSubsystem",
-				"UnrealEd",
+				"CommonUI",
+				//"EditorSubsystem",
+				//"UnrealEd",
 				"Json",
 				"JsonUtilities",
+				"EnhancedInput", "CommonUI",
 
 				// ... add other public dependencies that you statically link with here ...
 			}
 		);
-
 
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
@@ -54,11 +52,10 @@ public class UnrealCoreFramework : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				"BUITween"
+				"BUITween", "OnlineSubsystemUtils", "OnlineSubsystemUtils"
 				// ... add private dependencies that you statically link with here ...	
 			}
 		);
-
 
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]
