@@ -1,17 +1,15 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-#include "SubSystems/LocalPlayer/UISubsystem.h"
+﻿#include "SubSystems/LocalPlayer/UISubsystem.h"
 
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/Character.h"
-#include "Kismet/GameplayStatics.h"
 #include "Settings/UnrealCoreFrameworkSettings.h"
 #include "UI/CoreHUD.h"
+#include "UI/MainUiContainer.h"
 #include "VisualLogger/VisualLogger.h"
 
 DEFINE_LOG_CATEGORY(LogUISubsystem);
 
-UCoreWidget* UUISubsystem::CreatePage(APlayerController* Owner, TSubclassOf<UCoreWidget> PageClass)
+UCoreWidget* UUISubsystem::CreateViewportPage(APlayerController* Owner, TSubclassOf<UCoreWidget> PageClass)
 {
 	if (!Owner)
 	{
@@ -34,10 +32,10 @@ UCoreWidget* UUISubsystem::CreatePage(APlayerController* Owner, TSubclassOf<UCor
 	if (UCoreWidget* Page = CreateWidget<UCoreWidget>(Owner, PageClass))
 	{
 		Page->AddToViewport();
-		IPageableWidgetInterface* PageInt = Cast<IPageableWidgetInterface>(Page);
+		// IPageableWidgetInterface* PageInt = Cast<IPageableWidgetInterface>(Page);
 
-		CoreWidgetsOpen.Push(PageInt);
-		PageInt->Open();
+		// CoreWidgetsOpen.Push(PageInt);
+		// PageInt->Open();
 		UE_VLOG_UELOG(this, LogUISubsystem, Log, TEXT("Created Page %s"), *Page->GetName());
 		return Page;
 	}
@@ -46,11 +44,11 @@ UCoreWidget* UUISubsystem::CreatePage(APlayerController* Owner, TSubclassOf<UCor
 	return nullptr;
 }
 
-void UUISubsystem::RemovePage(IPageableWidgetInterface* Page)
+void UUISubsystem::RemoveViewportPage(IPageableWidgetInterface* Page)
 {
 	if (Page)
 	{
-		CoreWidgetsOpen.Remove(Page);
+		// CoreWidgetsOpen.Remove(Page);
 		if (UCoreWidget* Widget = Cast<UCoreWidget>(Page))
 		{
 			if (APlayerController* PC = Widget->GetOwningPlayer())
@@ -63,22 +61,44 @@ void UUISubsystem::RemovePage(IPageableWidgetInterface* Page)
 	}
 }
 
-void UUISubsystem::RemoveAllPages()
+void UUISubsystem::RemoveAllViewportPages()
 {
-	for (IPageableWidgetInterface* Page : CoreWidgetsOpen)
+	/*for (IPageableWidgetInterface* Page : CoreWidgetsOpen)
 	{
 		Page->Close();
 	}
 
-	CoreWidgetsOpen.Empty();
+	CoreWidgetsOpen.Empty();*/
+}
+
+UCoreWidget* UUISubsystem::AddWidgetToStack(const TSubclassOf<UCoreWidget>& PageClass, const EWidgetContainerType& StackContainerType)
+{
+	if (!MainUiContainer)
+	{
+		UE_VLOG_UELOG(this, LogUISubsystem, Error, TEXT("UUISubsystem::AddWidgetToStack - MainUiContainer is invalid"));
+	}
+	UCoreWidget* Widget = MainUiContainer->AddWidgetToStack(PageClass, StackContainerType);
+	// Widget->Show();
+	return Widget;
+}
+
+void UUISubsystem::RemoveWidgetFromStack(UCoreWidget& Widget, const EWidgetContainerType& StackContainerType, bool Destroy)
+{
+	if (!MainUiContainer)
+	{
+		UE_VLOG_UELOG(this, LogUISubsystem, Error, TEXT("UUISubsystem::RemoveWidgetFromStack - MainUiContainer is invalid"));
+	}
+
+	MainUiContainer->RemoveWidgetFromStack(Widget, StackContainerType);
 }
 
 IPageableWidgetInterface* UUISubsystem::GetTopPage()
 {
-	return CoreWidgetsOpen.Top();
+	// return CoreWidgetsOpen.Top();
+	return nullptr;
 }
 
-void UUISubsystem::CreateMainPage(ECoreMainPageType MainPageType)
+void UUISubsystem::CreateMainUIContainer()
 {
 	const UUnrealCoreFrameworkSettings* Settings = UUnrealCoreFrameworkSettings::GetSettings();
 	if (!Settings)
@@ -101,59 +121,13 @@ void UUISubsystem::CreateMainPage(ECoreMainPageType MainPageType)
 		return;
 	}
 
-	switch (MainPageType)
+	if (UCoreWidget* Widget = CreateViewportPage(PC, *Settings->MainUIContainer))
 	{
-		case ECoreMainPageType::MainMenu:
-			CreatePage(PC, *Settings->MainMenuPage);
-			break;
-		case ECoreMainPageType::MainHUD:
-			CreatePage(PC, Settings->MainHUDPage);
-			break;
-		case ECoreMainPageType::PauseMenu:
-			CreatePage(PC, Settings->PauseMenuPage);
-			break;
-	}
+		MainUiContainer = Cast<UMainUiContainer>(Widget);
 
-	SetPlayerControllerInput(PC, ShouldDisablePlayerControllerInput());
-}
-
-UCoreWidget* UUISubsystem::GetMainPage(ECoreMainPageType MainPageType)
-{
-	TSubclassOf<UCorePage> MainClass = nullptr;
-	const UUnrealCoreFrameworkSettings* Settings = UUnrealCoreFrameworkSettings::GetSettings();
-	if (!Settings)
-	{
-		UE_VLOG_UELOG(this, LogUISubsystem, Error, TEXT("Failed to get Developer Settings for UnrealCoreFrameworkSettings."));
-		return nullptr;
+		UCorePage* Page = MainUiContainer->AddWidgetToStack<UCorePage>(Settings->MainMenuPage, EWidgetContainerType::Page);
+		// Page->Open();
 	}
-
-	switch (MainPageType)
-	{
-		case ECoreMainPageType::MainMenu:
-			MainClass = Settings->MainMenuPage;
-			break;
-		case ECoreMainPageType::MainHUD:
-			MainClass = Settings->MainHUDPage;
-			break;
-		case ECoreMainPageType::PauseMenu:
-			MainClass = Settings->PauseMenuPage;
-			break;
-	}
-	
-	UClass* Class = MainClass.Get();
-	for (IPageableWidgetInterface* Int : CoreWidgetsOpen)
-	{
-		if (UCoreWidget* Widget = Cast<UCoreWidget>(Int))
-		{
-			if (Class && Widget->IsA(Class))
-			{
-				UE_VLOG_UELOG(this, LogUISubsystem, Log, TEXT("Found %s"), *Widget->GetName());
-				return Widget;
-			}
-		}
-	}
-
-	return nullptr;
 }
 
 bool UUISubsystem::ShouldDisablePlayerControllerInput()
@@ -163,14 +137,14 @@ bool UUISubsystem::ShouldDisablePlayerControllerInput()
 		return false;
 	}
 
-	for (const IPageableWidgetInterface* Page : CoreWidgetsOpen)
+	/*for (const IPageableWidgetInterface* Page : CoreWidgetsOpen)
 	{
 		if (Page->DisablePlayerControllerInput)
 		{
 			return true;
 		}
 	}
-
+*/
 	return false;
 }
 

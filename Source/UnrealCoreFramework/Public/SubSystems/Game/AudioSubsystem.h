@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "SubSystems/Base/CoreAudioEngineSubSystem.h"
 
 #include "AudioSubsystem.generated.h"

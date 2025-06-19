@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "CoreCharacter.h"
-#include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 
 #include "CoreGameMode.generated.h"

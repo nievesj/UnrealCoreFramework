@@ -57,7 +57,7 @@
 
 # Not recommended to use, but supported:
 *.[mM][pP]3 filter=lfs diff=lfs merge=lfs -text
-* [wW][mM][aA] filter=lfs diff=lfs merge=lfs -text
+*.[wW][mM][aA] filter=lfs diff=lfs merge=lfs -text
 *.[aA][cC]3 filter=lfs diff=lfs merge=lfs -text
 *.[aA][mM][rR] filter=lfs diff=lfs merge=lfs -text
 *.[aA][iI][fF] filter=lfs diff=lfs merge=lfs -text

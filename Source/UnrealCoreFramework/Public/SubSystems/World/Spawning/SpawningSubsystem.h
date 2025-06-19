@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "SubSystems/Base/CoreWorldSubsystem.h"
 
 #include "SpawningSubsystem.generated.h"

@@ -2,13 +2,12 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Engine/DeveloperSettings.h"
-#include "GameFramework/GameUserSettings.h"
 #include "UI/CorePage.h"
 
 #include "UnrealCoreFrameworkSettings.generated.h"
 
+class UMainUiContainer;
 UCLASS(config = Engine, defaultconfig, meta = (DisplayName = "Unreal Core Framework"))
 class UNREALCOREFRAMEWORK_API UUnrealCoreFrameworkSettings : public UDeveloperSettings
 {
@@ -28,4 +27,10 @@ public:
 
 	UPROPERTY(EditAnywhere, config, BlueprintReadWrite, Category = UnrealCoreFrameworkSettings, Meta = (DisplayName = "Pause Menu Page"))
 	TSubclassOf<UCorePage> PauseMenuPage;
+
+	UPROPERTY(EditAnywhere, config, BlueprintReadWrite, Category = UnrealCoreFrameworkSettings, Meta = (DisplayName = "Main UI Container"))
+	TSubclassOf<UMainUiContainer> MainUIContainer;
+
+	UPROPERTY(EditAnywhere, config, BlueprintReadWrite, Category = UnrealCoreFrameworkSettings, Meta = (DisplayName = "Prompt"))
+	TSubclassOf<UCoreWidget> YesNoPrompt;
 };

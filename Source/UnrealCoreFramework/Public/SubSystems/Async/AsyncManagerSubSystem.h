@@ -3,7 +3,6 @@
 #pragma once
 
 #include "Containers/Ticker.h"
-#include "CoreMinimal.h"
 #include "SubSystems/Base/CoreGameInstanceSubsystem.h"
 
 #include "AsyncManagerSubSystem.generated.h"

@@ -6,7 +6,8 @@
 #include "Game/Base/CoreGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 
-ACoreGameState::ACoreGameState(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+ACoreGameState::ACoreGameState(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	SetRemoteRoleForBackwardsCompat(ROLE_SimulatedProxy);
 	bReplicates = true;
