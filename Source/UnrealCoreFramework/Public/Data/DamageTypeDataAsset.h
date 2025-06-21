@@ -10,12 +10,12 @@
  * Base class for damage types.
  */
 UCLASS(MinimalAPI, const, Blueprintable, BlueprintType)
-class UDamageTypeBase : public UDamageType
+class UCoreDamageType : public UDamageType
 {
 	GENERATED_BODY()
 
 public:
-	UDamageTypeBase(const FObjectInitializer& ObjectInitializer);
+	UCoreDamageType(const FObjectInitializer& ObjectInitializer);
 
 	/** Multiplier to apply to base damage for this type. 1.0 means no change, higher means more damage. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Damage", meta = (ClampMin = "0.0"))
@@ -45,14 +45,14 @@ public:
  * when applying different kinds of damage.
  */
 UCLASS(BlueprintType)
-class UNREALCOREFRAMEWORK_API UDamageTypeDataAsset : public UPrimaryDataAsset
+class UNREALCOREFRAMEWORK_API UDamageTypeDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
 
 public:
 	/** Class reference for the built-in Unreal damage type used for calculations. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Core")
-	TSubclassOf<UDamageTypeBase> DamageTypeClass;
+	TSubclassOf<UCoreDamageType> CoreDamageTypeClass;
 
 	/** Localized display name for UI. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Display")
@@ -64,15 +64,15 @@ public:
 
 	/** Icon to use for this damage type in UIs. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Display")
-	UTexture2D* Icon;
+	TSoftObjectPtr<UTexture2D> Icon;
 
 	/** Particle system played when applying this damage type. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effects")
-	UParticleSystem* HitEffect;
+	TSoftObjectPtr<UParticleSystem> HitEffect;
 
 	/** Audio cue played when this damage type is applied. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effects")
-	USoundBase* HitSound;
+	TSoftObjectPtr<USoundBase> HitSound;
 
 	/**
 	 * Get the default object for the referenced damage type class.
@@ -80,18 +80,15 @@ public:
 	 * Returns the CDO for use in runtime systems.
 	 */
 	UFUNCTION(BlueprintPure, Category = "Damage Type")
-	UDamageTypeBase* GetDamageTypeCDO() const
+	UCoreDamageType* GetDamageTypeCDO() const
 	{
-		return DamageTypeClass ? DamageTypeClass->GetDefaultObject<UDamageTypeBase>() : nullptr;
+		return CoreDamageTypeClass ? CoreDamageTypeClass->GetDefaultObject<UCoreDamageType>() : nullptr;
 	}
 
 	/**
 	 * Returns the unique PrimaryAssetId for this data asset. Used by Unreal's asset manager.
 	 */
-	virtual FPrimaryAssetId GetPrimaryAssetId() const override
-	{
-		return FPrimaryAssetId("DamageType", GetFName());
-	}
+	virtual FPrimaryAssetId GetPrimaryAssetId() const override;
 
 protected:
 	/**

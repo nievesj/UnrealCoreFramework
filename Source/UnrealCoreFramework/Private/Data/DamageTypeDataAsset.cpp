@@ -2,9 +2,14 @@
 
 #include "Data/DamageTypeDataAsset.h"
 
-UDamageTypeBase::UDamageTypeBase(const FObjectInitializer& ObjectInitializer)
+UCoreDamageType::UCoreDamageType(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+}
+
+FPrimaryAssetId UDamageTypeDataAsset::GetPrimaryAssetId() const
+{
+	return FPrimaryAssetId("DamageTypeDataAsset", GetFName());
 }
 
 void UDamageTypeDataAsset::PostLoad()
@@ -12,8 +17,8 @@ void UDamageTypeDataAsset::PostLoad()
 	Super::PostLoad();
 
 	// Set default damage type if none specified
-	if (!DamageTypeClass)
+	if (!CoreDamageTypeClass)
 	{
-		DamageTypeClass = UDamageType::StaticClass();
+		CoreDamageTypeClass = UDamageType::StaticClass();
 	}
 }

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "Engine/DataAsset.h"
 #include "Engine/StreamableManager.h"
 #include "SubSystems/Base/CoreGameInstanceSubsystem.h"
@@ -11,10 +12,10 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogDataAssetManagerSubsystem, Log, All);
 
 /** Blueprint-compatible delegate for asset loading completion events */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDataAssetLoaded, UPrimaryDataAsset*, LoadedAsset, bool, bSuccess);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDataAssetLoaded, UDataAsset*, LoadedAsset, bool, bSuccess);
 
 /** TFunction callback type for C++ usage */
-DECLARE_DELEGATE_TwoParams(FOnDataAssetLoadedDelegate, UPrimaryDataAsset*, bool);
+DECLARE_DELEGATE_TwoParams(FOnDataAssetLoadedDelegate, UDataAsset*, bool);
 
 /**
  * Centralized subsystem for managing Primary Data Assets throughout the game.
@@ -38,7 +39,7 @@ public:
 	 * @return Pointer to the loaded asset, or nullptr if loading failed
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Data Asset Manager")
-	UPrimaryDataAsset* LoadDataAssetById(FPrimaryAssetId AssetId);
+	UDataAsset* LoadDataAssetByPrimaryAssetId(FPrimaryAssetId AssetId);
 
 	/**
 	 * Load a data asset synchronously by class type and name.
@@ -47,26 +48,14 @@ public:
 	 * @return Pointer to the loaded asset, or nullptr if loading failed
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Data Asset Manager", meta = (DeterminesOutputType = "AssetClass"))
-	UPrimaryDataAsset* LoadDataAssetByClass(TSubclassOf<UPrimaryDataAsset> AssetClass, const FString& AssetName);
-
-	/**
-	 * Template function for type-safe synchronous loading in C++.
-	 * @param AssetName The name of the asset to load
-	 * @return Pointer to the loaded asset cast to type T, or nullptr if loading failed
-	 */
-	template <typename T>
-	T* LoadDataAsset(const FString& AssetName)
-	{
-		static_assert(TIsDerivedFrom<T, UPrimaryDataAsset>::IsDerived, "T must be derived from UPrimaryDataAsset");
-		return Cast<T>(LoadDataAssetByClass(T::StaticClass(), AssetName));
-	}
+	UDataAsset* LoadDataAssetByClass(TSubclassOf<UDataAsset> AssetClass, const FString& AssetName);
 
 	/**
 	 * Load a data asset asynchronously using its Primary Asset ID.
 	 * @param AssetId The unique identifier for the asset to load
 	 * @param OnLoaded Callback function called when loading completes
 	 */
-	void LoadDataAssetAsync(FPrimaryAssetId AssetId, TFunction<void(UPrimaryDataAsset*, bool)> OnLoaded);
+	void LoadDataAssetAsync(FPrimaryAssetId AssetId, TFunction<void(UDataAsset*, bool)> OnLoaded);
 
 	/**
 	 * Load a data asset asynchronously by class and name.
@@ -74,14 +63,14 @@ public:
 	 * @param AssetName The name of the asset to load
 	 * @param OnLoaded Callback function called when loading completes
 	 */
-	void LoadDataAssetByClassAsync(const TSubclassOf<UPrimaryDataAsset>& AssetClass, const FString& AssetName, const TFunction<void(UPrimaryDataAsset*, bool)>& OnLoaded);
+	void LoadDataAssetByClassAsync(const TSubclassOf<UDataAsset>& AssetClass, const FString& AssetName, const TFunction<void(UDataAsset*, bool)>& OnLoaded);
 
 	/**
 	 * Load all assets of a specific type asynchronously.
 	 * @param AssetClass The class type of assets to load
 	 * @param OnEachLoaded Callback called for each asset as it finishes loading
 	 */
-	void LoadAllDataAssetsOfTypeAsync(const TSubclassOf<UPrimaryDataAsset>& AssetClass, const TFunction<void(UPrimaryDataAsset*, bool)>& OnEachLoaded);
+	void LoadAllDataAssetsOfTypeAsync(const TSubclassOf<UDataAsset>& AssetClass, const TFunction<void(UDataAsset*, bool)>& OnEachLoaded);
 
 	/**
 	 * Load all data assets of a specific type synchronously.
@@ -89,22 +78,14 @@ public:
 	 * @return Array of all loaded assets of the specified type
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Data Asset Manager")
-	TArray<UPrimaryDataAsset*> LoadAllDataAssetsOfType(TSubclassOf<UPrimaryDataAsset> AssetClass);
+	TArray<UDataAsset*> LoadAllDataAssetsOfType(TSubclassOf<UDataAsset> AssetClass);
 
 	/**
 	 * Get all registered Primary Asset IDs in the system.
 	 * @return Array of all available asset IDs
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Data Asset Manager")
-	TArray<FPrimaryAssetId> GetAllAssetIds() const;
-
-	/**
-	 * Get all asset IDs of a specific type.
-	 * @param AssetType The type of assets to query
-	 * @return Array of asset IDs matching the specified type
-	 */
-	UFUNCTION(BlueprintCallable, Category = "Data Asset Manager")
-	TArray<FPrimaryAssetId> GetAssetIdsByType(FPrimaryAssetType AssetType) const;
+	TArray<FPrimaryAssetId> GetAllAssetIds(const TSubclassOf<UDataAsset> AssetClass) const;
 
 	/**
 	 * Check if a specific asset is currently loaded in memory.
@@ -142,11 +123,16 @@ protected:
 	 * @param AssetId The ID of the asset that finished loading
 	 * @param OnLoaded The user callback to execute
 	 */
-	void HandleAssetLoadedFunction(const FPrimaryAssetId& AssetId, const TFunction<void(UPrimaryDataAsset*, bool)>& OnLoaded);
+	void HandleAssetLoadedFunction(const FPrimaryAssetId& AssetId, const TFunction<void(UDataAsset*, bool)>& OnLoaded);
+
+	bool IsAssetCached(const FPrimaryAssetId& AssetId, UDataAsset*& OutCachedDataAsset) const;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UAssetManager> AssetManager;
 
 	/** Cache of loaded assets for quick access */
 	UPROPERTY(Transient)
-	TMap<FPrimaryAssetId, TObjectPtr<UPrimaryDataAsset>> LoadedAssets;
+	TMap<FPrimaryAssetId, TObjectPtr<UDataAsset>> LoadedAssets;
 
 	/** Handles for ongoing async loading operations */
 	TMap<FPrimaryAssetId, TSharedPtr<FStreamableHandle>> AsyncHandles;
