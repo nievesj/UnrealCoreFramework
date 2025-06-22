@@ -1,22 +1,12 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-#pragma once
+﻿#pragma once
 
 #include "UObject/Object.h"
 
 #include "WaitUntilNextFrameTaskRunner.generated.h"
 
 /**
- * Utility UObject that defers execution of a lambda until the next game frame.
- *
- * Usage:
- *   - Call Run() with a lambda to schedule it for execution on the next tick.
- *   - Returns a TFuture<void> that completes after the lambda runs.
- *   - The object manages its own lifetime and is garbage collected after execution.
- *
- * Implementation:
- *   - Inherits from UObject and FTickableGameObject to use Unreal's ticking system.
- *   - Uses TPromise/TFuture for async-style completion notification.
+ * Defers lambda execution until the next game frame.
+ * Uses TPromise/TFuture for async completion notification.
  */
 UCLASS()
 class UNREALCOREFRAMEWORK_API UWaitUntilNextFrameTaskRunner : public UObject, public FTickableGameObject
@@ -27,35 +17,31 @@ public:
 	using FLambda = TFunction<void()>;
 
 	/**
-	 * Schedules the provided lambda to execute on the next frame.
-	 * @param InLambda The lambda to execute.
-	 * @return A TFuture<void> that is fulfilled after the lambda runs.
+	 * Schedules lambda for next frame execution.
+	 * @param InLambda Function to execute
+	 * @return Future that completes after execution
 	 */
 	TFuture<void> Run(FLambda InLambda)
 	{
 		Lambda = MoveTemp(InLambda);
 		Promise = MakeUnique<TPromise<void>>();
-		AddToRoot(); // Prevent garbage collection until execution
+		AddToRoot(); // Prevent GC until execution
 		return Promise->GetFuture();
 	}
 
-	/**
-	 * Allow cancellation of pending execution
-	 */
+	/** Cancels pending execution and cleans up */
 	void Cancel()
 	{
 		if (Promise.IsValid())
 		{
-			Promise->SetValue(); // Or consider SetException for cancelled state
+			Promise->SetValue();
 			Promise.Reset();
 		}
 		Lambda = nullptr;
 		RemoveFromRoot();
 	}
 
-	/**
-	 * Called every tick. Executes the lambda if set, fulfills the promise, and allows GC.
-	 */
+	/** Executes lambda and handles cleanup */
 	virtual void Tick(float DeltaTime) override
 	{
 		if (Lambda)
@@ -68,17 +54,23 @@ public:
 				Promise->SetValue();
 				Promise.Reset();
 			}
-			RemoveFromRoot(); // Allow object to be garbage collected
+			RemoveFromRoot();
 		}
 	}
 
-	/** Always tickable while alive. */
-	virtual bool IsTickable() const override { return true; }
+	/** Returns true while lambda is pending */
+	virtual bool IsTickable() const override { return Lambda != nullptr; }
 
-	/** Required by FTickableGameObject. */
-	virtual TStatId GetStatId() const override { RETURN_QUICK_DECLARE_CYCLE_STAT(UNextFrameLambdaRunner, STATGROUP_Tickables); }
+	/** Required for profiling */
+	virtual TStatId GetStatId() const override
+	{
+		RETURN_QUICK_DECLARE_CYCLE_STAT(UWaitUntilNextFrameTaskRunner, STATGROUP_Tickables);
+	}
 
 private:
-	FLambda					   Lambda;	// Lambda to execute next frame
-	TUniquePtr<TPromise<void>> Promise; // Promise to fulfill after execution
+	/** Lambda to execute next frame */
+	FLambda Lambda;
+
+	/** Promise for completion notification */
+	TUniquePtr<TPromise<void>> Promise;
 };
