@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "AssetRegistry/AssetRegistryModule.h"
 #include "Engine/DataAsset.h"
 #include "Engine/StreamableManager.h"
 #include "SubSystems/Base/CoreGameInstanceSubsystem.h"

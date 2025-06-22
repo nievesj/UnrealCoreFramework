@@ -34,11 +34,11 @@ public class UnrealCoreFramework : ModuleRules
 				"Slate",
 				"UMG",
 				"CommonUI",
-				//"EditorSubsystem",
-				//"UnrealEd",
 				"Json",
 				"JsonUtilities",
-				"EnhancedInput", "CommonUI",
+				"EnhancedInput", 
+				"CommonUI", 
+				"ModelViewViewModel"
 
 				// ... add other public dependencies that you statically link with here ...
 			}
