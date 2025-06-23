@@ -6,77 +6,97 @@
 
 DEFINE_LOG_CATEGORY(LogViewModelManagerSubsystem);
 
-UCoreViewModel* UViewModelManagerSubsystem::CreateViewModel(const TSubclassOf<UCoreViewModel> ViewModelClass)
+UCoreViewModel* UViewModelManagerSubsystem::GetOrCreateViewModel(const TSubclassOf<UCoreViewModel> ViewModelClass, const UObject* TrackedObject)
 {
 	if (!IsValid(ViewModelClass))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("CreateViewModel: Invalid ViewModel class"));
+		UE_LOG(LogViewModelManagerSubsystem, Warning, TEXT("CreateViewModel: Invalid ViewModel class"));
 		return nullptr;
 	}
 
-	// Check if we already have this ViewModel
-	if (TObjectPtr<UCoreViewModel>* ExistingViewModel = ViewModels.Find(ViewModelClass))
+	if (!IsValid(TrackedObject))
 	{
-		if (IsValid(*ExistingViewModel))
-		{
-			return *ExistingViewModel;
-		}
-		else
-		{
-			// Remove invalid entry
-			ViewModels.Remove(ViewModelClass);
-		}
+		UE_LOG(LogViewModelManagerSubsystem, Warning, TEXT("CreateViewModel: Invalid TrackedObject"));
+		return nullptr;
+	}
+
+	UCoreViewModel* ViewModel = GetModel(TrackedObject);
+	if (IsValid(ViewModel))
+	{
+		return ViewModel;
 	}
 
 	// Create new ViewModel instance
 	UCoreViewModel* NewViewModel = NewObject<UCoreViewModel>(this, ViewModelClass);
 	if (IsValid(NewViewModel))
 	{
-		ViewModels.Add(ViewModelClass, NewViewModel);
-		UE_LOG(LogTemp, Log, TEXT("Created ViewModel of class: %s"), *ViewModelClass->GetName());
+		ViewModels.Add(TrackedObject->GetUniqueID());
+		UE_LOG(LogViewModelManagerSubsystem, Log, TEXT("Created ViewModel of class: %s"), *ViewModelClass->GetName());
 		return NewViewModel;
 	}
 
-	UE_LOG(LogTemp, Error, TEXT("Failed to create ViewModel of class: %s"), *ViewModelClass->GetName());
+	UE_LOG(LogViewModelManagerSubsystem, Error, TEXT("Failed to create ViewModel of class: %s"), *ViewModelClass->GetName());
 	return nullptr;
 }
 
-UCoreViewModel* UViewModelManagerSubsystem::GetViewModel(const TSubclassOf<UCoreViewModel> ViewModelClass)
+UCoreViewModel* UViewModelManagerSubsystem::GetModel(const UObject* TrackedObject)
 {
-	if (!IsValid(ViewModelClass))
+	if (!IsValid(TrackedObject))
 	{
 		return nullptr;
 	}
 
-	if (TObjectPtr<UCoreViewModel>* ExistingViewModel = ViewModels.Find(ViewModelClass))
+	const TObjectPtr<UCoreViewModel>* Model = ViewModels.Find(TrackedObject->GetUniqueID());
+	if (!Model || !IsValid(*Model))
 	{
-		if (IsValid(*ExistingViewModel))
-		{
-			return *ExistingViewModel;
-		}
-		else
-		{
-			// Clean up invalid entry
-			ViewModels.Remove(ViewModelClass);
-		}
+		return nullptr;
 	}
 
-	return nullptr;
+	UCoreViewModel* ViewModel = Model->Get();
+	const UObject*	Source = ViewModel->GetSource();
+	// Verify the source matches and is still valid
+	if (!IsValid(Source) || Source->GetUniqueID() != TrackedObject->GetUniqueID())
+	{
+		// Clean up stale entry
+		ViewModel->DeInitialize();
+		ViewModels.Remove(TrackedObject->GetUniqueID());
+		return nullptr;
+	}
+
+	return ViewModel;
 }
 
-bool UViewModelManagerSubsystem::RemoveViewModel(const TSubclassOf<UCoreViewModel> ViewModelClass)
+bool UViewModelManagerSubsystem::RemoveViewModel(const UObject* TrackedObject)
 {
-	if (!IsValid(ViewModelClass))
+	if (!IsValid(TrackedObject))
 	{
 		return false;
 	}
 
-	if (ViewModels.Contains(ViewModelClass))
+	UCoreViewModel* Model = GetModel(TrackedObject);
+	if (IsValid(Model))
 	{
-		ViewModels.Remove(ViewModelClass);
-		UE_LOG(LogTemp, Log, TEXT("Removed ViewModel of class: %s"), *ViewModelClass->GetName());
+		Model->DeInitialize();
+		ViewModels.Remove(TrackedObject->GetUniqueID());
+		Model = nullptr;
 		return true;
 	}
 
 	return false;
+}
+
+void UViewModelManagerSubsystem::ClearModels()
+{
+	for (const auto& Pair : ViewModels)
+	{
+		if (UCoreViewModel* ViewModel = Pair.Value.Get())
+		{
+			if (IsValid(ViewModel))
+			{
+				ViewModel->DeInitialize();
+			}
+		}
+	}
+
+	ViewModels.Empty();
 }

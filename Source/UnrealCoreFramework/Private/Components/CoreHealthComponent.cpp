@@ -1,7 +1,9 @@
 ﻿#include "Components/CoreHealthComponent.h"
 
-#include "Data/DamageTypeDataAsset.h"
 #include "GameFramework/Actor.h"
+#include "Tools/SubsystemHelper.h"
+#include "ViewModels/PlayerHealthViewModel.h"
+#include "ViewModels/ViewModelManagerSubsystem.h"
 
 DEFINE_LOG_CATEGORY(LogCoreHealthComponent);
 
@@ -15,12 +17,34 @@ void UCoreHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	CurrentHealth = MaxHealth;
-	if (AActor* Owner = GetOwner(); IsValid(Owner))
+	AActor* Owner = GetOwner();
+	if (!IsValid(Owner))
 	{
-		// Register for damage events from the engine
-		Owner->OnTakeAnyDamage.AddDynamic(this, &UCoreHealthComponent::HandleTakeAnyDamage);
+		UE_LOG(LogCoreHealthComponent, Error, TEXT("CoreHealthComponent: Owner is invalid"));
+		return;
 	}
+
+	CurrentHealth = MaxHealth;
+	Owner->OnTakeAnyDamage.AddDynamic(this, &UCoreHealthComponent::HandleTakeAnyDamage);
+
+	// Create and register the ViewModel
+	UViewModelManagerSubsystem* ViewModelManager = USubsystemHelper::GetSubsystem<UViewModelManagerSubsystem>(this);
+	if (IsValid(ViewModelManager))
+	{
+		HealthViewModel = ViewModelManager->GetOrCreateViewModel<UPlayerHealthViewModel>(UPlayerHealthViewModel::StaticClass(), this);
+	}
+}
+
+void UCoreHealthComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	UViewModelManagerSubsystem* ViewModelManager = USubsystemHelper::GetSubsystem<UViewModelManagerSubsystem>(this);
+	if (IsValid(ViewModelManager))
+	{
+		ViewModelManager->RemoveViewModel(this);
+	}
+	HealthViewModel = nullptr;
 }
 
 void UCoreHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

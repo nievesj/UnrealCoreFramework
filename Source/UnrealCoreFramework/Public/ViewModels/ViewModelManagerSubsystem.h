@@ -1,4 +1,5 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+﻿
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -17,36 +18,30 @@ class UNREALCOREFRAMEWORK_API UViewModelManagerSubsystem : public UCoreWorldSubs
 	GENERATED_BODY()
 
 public:
-	/** Creates or retrieves a ViewModel of the specified class */
+	/** Creates or retrieves a ViewModel of the specified class for the given tracked object. */
 	UFUNCTION(BlueprintCallable, Category = "ViewModel|Management")
-	UCoreViewModel* CreateViewModel(TSubclassOf<UCoreViewModel> ViewModelClass);
+	UCoreViewModel* GetOrCreateViewModel(TSubclassOf<UCoreViewModel> ViewModelClass, const UObject* TrackedObject);
 
-	/** Template version for type-safe ViewModel creation */
+	/** Retrieves an existing ViewModel for the specified tracked object. */
+	UCoreViewModel* GetModel(const UObject* TrackedObject);
+
+	/** Template version for type-safe ViewModel creation and retrieval. */
 	template <typename T>
-	FORCEINLINE T* CreateViewModel(TSubclassOf<T> ViewModelClass)
+	FORCEINLINE T* GetOrCreateViewModel(TSubclassOf<T> ViewModelClass, const UObject* TrackedObject)
 	{
 		static_assert(TIsDerivedFrom<T, UCoreViewModel>::IsDerived, "T must derive from UCoreViewModel");
-		return Cast<T>(CreateViewModel(ViewModelClass));
+		return Cast<T>(GetOrCreateViewModel(static_cast<TSubclassOf<UCoreViewModel>>(ViewModelClass), TrackedObject));
 	}
 
-	/** Gets an existing ViewModel of the specified class */
+	/** Removes the ViewModel associated with the specified tracked object. */
 	UFUNCTION(BlueprintCallable, Category = "ViewModel|Management")
-	UCoreViewModel* GetViewModel(TSubclassOf<UCoreViewModel> ViewModelClass);
+	bool RemoveViewModel(const UObject* TrackedObject);
 
-	/** Template version for type-safe ViewModel retrieval */
-	template <typename T>
-	FORCEINLINE T* GetViewModel(TSubclassOf<T> ViewModelClass)
-	{
-		static_assert(TIsDerivedFrom<T, UCoreViewModel>::IsDerived, "T must derive from UCoreViewModel");
-		return Cast<T>(GetViewModel(ViewModelClass));
-	}
-
-	/** Removes a ViewModel of the specified class */
-	UFUNCTION(BlueprintCallable, Category = "ViewModel|Management")
-	bool RemoveViewModel(TSubclassOf<UCoreViewModel> ViewModelClass);
+	/** Clears all ViewModels and properly deinitializes them. */
+	void ClearModels();
 
 protected:
-	/** Map of ViewModel class types to their instances */
+	/** Map of object unique IDs to their associated ViewModel instances. */
 	UPROPERTY(Transient)
-	TMap<TObjectPtr<UClass>, TObjectPtr<UCoreViewModel>> ViewModels;
+	TMap<uint32, TObjectPtr<UCoreViewModel>> ViewModels;
 };
