@@ -39,13 +39,15 @@ public:
 	void SetSourceFromObject(const T* InSourceObject)
 	{
 		static_assert(std::is_base_of_v<UObject, T>, "T must inherit from UObject");
-		Source = InSourceObject;
-
-		Initialize();
+		SetSource(InSourceObject);
 	}
 
 	/** Sets the source object that this ViewModel represents. */
-	void SetSource(UObject* InSourceObject) { Source = InSourceObject; }
+	void SetSource(UObject* InSourceObject)
+	{
+		Source = InSourceObject;
+		Initialize();
+	}
 
 	/** Template version for type-safe source object retrieval. */
 	template <typename T>

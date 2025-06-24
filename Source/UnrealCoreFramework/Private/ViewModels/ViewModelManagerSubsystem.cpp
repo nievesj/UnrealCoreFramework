@@ -6,10 +6,10 @@
 
 DEFINE_LOG_CATEGORY(LogViewModelManagerSubsystem);
 
-UCoreViewModel* UViewModelManagerSubsystem::GetOrCreateViewModel(const TSubclassOf<UCoreViewModel> ViewModelClass, const UObject* TrackedObject)
+UCoreViewModel* UViewModelManagerSubsystem::GetOrCreateViewModel(const TSubclassOf<UCoreViewModel> ViewModelClass, UObject* TrackedObject)
 {
-	if (!IsValid(ViewModelClass))
-	{
+	if (!ViewModelClass)
+	{ // problem here, null check fails even there is somethin in ViewModelClass
 		UE_LOG(LogViewModelManagerSubsystem, Warning, TEXT("CreateViewModel: Invalid ViewModel class"));
 		return nullptr;
 	}
@@ -30,6 +30,7 @@ UCoreViewModel* UViewModelManagerSubsystem::GetOrCreateViewModel(const TSubclass
 	UCoreViewModel* NewViewModel = NewObject<UCoreViewModel>(this, ViewModelClass);
 	if (IsValid(NewViewModel))
 	{
+		NewViewModel->SetSource(TrackedObject);
 		ViewModels.Add(TrackedObject->GetUniqueID());
 		UE_LOG(LogViewModelManagerSubsystem, Log, TEXT("Created ViewModel of class: %s"), *ViewModelClass->GetName());
 		return NewViewModel;

@@ -35,6 +35,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = CoreWidget)
 	void OnHidden();
 
+	UFUNCTION(BlueprintImplementableEvent, Category = CoreWidget)
+	void OnViewModelBound();
+
 	virtual FCoreWidgetAnimationSettings GetWidgetAnimationSettings() override
 	{
 		return CoreWidgetAnimationSettings;

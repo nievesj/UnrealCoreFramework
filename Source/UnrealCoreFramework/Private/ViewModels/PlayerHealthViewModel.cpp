@@ -51,6 +51,7 @@ void UPlayerHealthViewModel::Refresh()
 
 	UE_MVVM_SET_PROPERTY_VALUE(CurrentHealth, HealthComponent->GetCurrentHealth());
 	UE_MVVM_SET_PROPERTY_VALUE(MaxHealth, HealthComponent->GetMaxHealth());
+	UE_MVVM_SET_PROPERTY_VALUE(HealthPercentage, HealthComponent->GetHealthPercent());
 	UE_MVVM_SET_PROPERTY_VALUE(HealthRegenRate, HealthComponent->GetHealthRegenRate());
 	UE_MVVM_SET_PROPERTY_VALUE(DamageMultiplier, HealthComponent->GetDamageMultiplier());
 	UE_MVVM_SET_PROPERTY_VALUE(bIsDead, HealthComponent->IsDead());

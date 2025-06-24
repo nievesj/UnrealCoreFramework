@@ -33,6 +33,9 @@ public:
 	float MaxHealth = 0.0f;
 
 	UPROPERTY(BlueprintReadOnly, FieldNotify)
+	float HealthPercentage = 0.0f;
+
+	UPROPERTY(BlueprintReadOnly, FieldNotify)
 	float HealthRegenRate = 0.0f;
 
 	UPROPERTY(BlueprintReadOnly, FieldNotify)

@@ -38,7 +38,9 @@ public class UnrealCoreFramework : ModuleRules
 				"JsonUtilities",
 				"EnhancedInput", 
 				"CommonUI", 
-				"ModelViewViewModel"
+				"ModelViewViewModel",
+				"FieldNotification"
+
 
 				// ... add other public dependencies that you statically link with here ...
 			}

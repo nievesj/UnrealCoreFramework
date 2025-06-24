@@ -20,17 +20,17 @@ class UNREALCOREFRAMEWORK_API UViewModelManagerSubsystem : public UCoreWorldSubs
 public:
 	/** Creates or retrieves a ViewModel of the specified class for the given tracked object. */
 	UFUNCTION(BlueprintCallable, Category = "ViewModel|Management")
-	UCoreViewModel* GetOrCreateViewModel(TSubclassOf<UCoreViewModel> ViewModelClass, const UObject* TrackedObject);
+	UCoreViewModel* GetOrCreateViewModel(TSubclassOf<UCoreViewModel> ViewModelClass, UObject* TrackedObject);
 
 	/** Retrieves an existing ViewModel for the specified tracked object. */
 	UCoreViewModel* GetModel(const UObject* TrackedObject);
 
 	/** Template version for type-safe ViewModel creation and retrieval. */
 	template <typename T>
-	FORCEINLINE T* GetOrCreateViewModel(TSubclassOf<T> ViewModelClass, const UObject* TrackedObject)
+	FORCEINLINE T* GetOrCreateViewModel(UObject* TrackedObject)
 	{
 		static_assert(TIsDerivedFrom<T, UCoreViewModel>::IsDerived, "T must derive from UCoreViewModel");
-		return Cast<T>(GetOrCreateViewModel(static_cast<TSubclassOf<UCoreViewModel>>(ViewModelClass), TrackedObject));
+		return Cast<T>(GetOrCreateViewModel(static_cast<TSubclassOf<UCoreViewModel>>(T::StaticClass()), TrackedObject));
 	}
 
 	/** Removes the ViewModel associated with the specified tracked object. */

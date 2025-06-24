@@ -24,14 +24,14 @@ void UCoreHealthComponent::BeginPlay()
 		return;
 	}
 
-	CurrentHealth = MaxHealth;
+	UpdateHealth(MaxHealth);
 	Owner->OnTakeAnyDamage.AddDynamic(this, &UCoreHealthComponent::HandleTakeAnyDamage);
 
 	// Create and register the ViewModel
 	UViewModelManagerSubsystem* ViewModelManager = USubsystemHelper::GetSubsystem<UViewModelManagerSubsystem>(this);
 	if (IsValid(ViewModelManager))
 	{
-		HealthViewModel = ViewModelManager->GetOrCreateViewModel<UPlayerHealthViewModel>(UPlayerHealthViewModel::StaticClass(), this);
+		HealthViewModel = ViewModelManager->GetOrCreateViewModel<UPlayerHealthViewModel>(this);
 	}
 }
 
