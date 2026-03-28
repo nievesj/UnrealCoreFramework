@@ -1,22 +1,34 @@
 ﻿#include "CoreTween.h"
 
+#include "CoreTweenWorldSubsystem.h"
 #include "Targets/WidgetTweenTarget.h"
 #include "Components/Widget.h"
-
-// Static member initialization
-TArray<TSharedPtr<FCoreTweenState>> UCoreTween::ActiveTweenStates;
+#include "Engine/World.h"
 
 // ============================================================================
-// UCoreTween — static factory + management
+// UCoreTween — static factory + management (delegates to per-world subsystem)
 // ============================================================================
+
+UCoreTweenWorldSubsystem* UCoreTween::GetSubsystem(UObject* WorldContext)
+{
+	if (!WorldContext)
+	{
+		return nullptr;
+	}
+	UWorld* World = WorldContext->GetWorld();
+	if (!World)
+	{
+		return nullptr;
+	}
+	return World->GetSubsystem<UCoreTweenWorldSubsystem>();
+}
 
 FCoreTweenBuilder UCoreTween::Create(UWidget* Widget, const float Duration, const float Delay, const bool bAdditive)
 {
-	PruneFinished();
-
-	if (!bAdditive)
+	UCoreTweenWorldSubsystem* Subsystem = GetSubsystem(Widget);
+	if (Subsystem && !bAdditive)
 	{
-		Clear(Widget);
+		Subsystem->Clear(Widget);
 	}
 
 	TSharedPtr<FWidgetTweenTarget> Target = MakeShared<FWidgetTweenTarget>(Widget);
@@ -25,59 +37,52 @@ FCoreTweenBuilder UCoreTween::Create(UWidget* Widget, const float Duration, cons
 
 int32 UCoreTween::Clear(UWidget* Widget)
 {
-	int32 NumCancelled = 0;
-	for (int32 Idx = ActiveTweenStates.Num() - 1; Idx >= 0; --Idx)
+	UCoreTweenWorldSubsystem* Subsystem = GetSubsystem(Widget);
+	if (!Subsystem)
 	{
-		TSharedPtr<FCoreTweenState>& State = ActiveTweenStates[Idx];
-		if (State->Widget.Get() == Widget)
-		{
-			if (State->FlowState.IsValid())
-			{
-				State->FlowState->Cancel();
-			}
-			State->bFinished.store(true, std::memory_order_release);
-			ActiveTweenStates.RemoveAtSwap(Idx);
-			NumCancelled++;
-		}
+		return 0;
 	}
-	return NumCancelled;
+	return Subsystem->Clear(Widget);
 }
 
 bool UCoreTween::GetIsTweening(UWidget* Widget)
 {
-	PruneFinished();
-	for (const TSharedPtr<FCoreTweenState>& State : ActiveTweenStates)
+	UCoreTweenWorldSubsystem* Subsystem = GetSubsystem(Widget);
+	if (!Subsystem)
 	{
-		if (State->Widget.Get() == Widget && !State->bFinished.load(std::memory_order_acquire))
-		{
-			return true;
-		}
+		return false;
 	}
-	return false;
+	return Subsystem->GetIsTweening(Widget);
 }
 
-void UCoreTween::CompleteAll()
+void UCoreTween::CompleteAll(UObject* WorldContext)
 {
-	for (const TSharedPtr<FCoreTweenState>& State : ActiveTweenStates)
+	UCoreTweenWorldSubsystem* Subsystem = GetSubsystem(WorldContext);
+	if (!Subsystem)
 	{
-		if (!State->bFinished.load(std::memory_order_acquire))
-		{
-			State->bForceComplete.store(true, std::memory_order_release);
-		}
+		return;
 	}
+	Subsystem->CompleteAll();
 }
 
-void UCoreTween::RegisterTweenState(TSharedPtr<FCoreTweenState> State)
+void UCoreTween::RegisterTweenState(UObject* WorldContext, TSharedPtr<FCoreTweenState> State)
 {
-	ActiveTweenStates.Add(MoveTemp(State));
-}
-
-void UCoreTween::PruneFinished()
-{
-	ActiveTweenStates.RemoveAll([](const TSharedPtr<FCoreTweenState>& State)
+	UCoreTweenWorldSubsystem* Subsystem = GetSubsystem(WorldContext);
+	if (!Subsystem)
 	{
-		return State->bFinished.load(std::memory_order_acquire);
-	});
+		return;
+	}
+	Subsystem->RegisterTweenState(MoveTemp(State));
+}
+
+TArray<TSharedPtr<FCoreTweenState>>* UCoreTween::GetActiveTweenStates(UObject* WorldContext)
+{
+	UCoreTweenWorldSubsystem* Subsystem = GetSubsystem(WorldContext);
+	if (!Subsystem)
+	{
+		return nullptr;
+	}
+	return &Subsystem->GetActiveTweenStates();
 }
 
 // ============================================================================
@@ -90,7 +95,6 @@ UCoreTweenParamChain* UCoreTweenBlueprintFunctionLibrary::CreateTween(
 	UCoreTweenParamChain* Chain = NewObject<UCoreTweenParamChain>();
 	if (Chain)
 	{
-		Chain->SetFlags(RF_MarkAsRootSet);
 		Chain->Builder = UCoreTween::Create(Widget, Duration, Delay, bAdditive);
 	}
 	return Chain;
@@ -104,7 +108,15 @@ void UCoreTweenBlueprintFunctionLibrary::RunTween(UCoreTweenParamChain* Params, 
 	}
 	AsyncFlow::TTask<void> Task = Params->Builder.Run(WorldContext);
 	Task.Start();
-	Params->ClearFlags(RF_MarkAsRootSet);
+
+	// Store the task in the TweenState so the coroutine survives until completion.
+	// The TweenState is the last one registered (most recent entry in ActiveTweenStates).
+	TArray<TSharedPtr<FCoreTweenState>>* States = UCoreTween::GetActiveTweenStates(WorldContext);
+	if (States && States->Num() > 0)
+	{
+		States->Last()->RunningTask = MoveTemp(Task);
+	}
+
 	Params->ConditionalBeginDestroy();
 }
 
