@@ -13,12 +13,13 @@ class UUISubsystem;
 UCLASS(Abstract, Blueprintable, ClassGroup = UI, meta = (Category = "Core Framework UI", DisableNativeTick))
 class UNREALCOREFRAMEWORK_API UCorePage : public UCoreWidget, public IPageableWidgetInterface
 {
+	GENERATED_BODY()
+
 public:
 	virtual void Open() override;
 	virtual void Close() override;
+	virtual bool GetDisablePlayerInput() const override { return DisablePlayerInput; }
 
-private:
-	GENERATED_BODY()
 
 protected:
 	virtual void NativeConstruct() override;

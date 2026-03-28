@@ -2,8 +2,10 @@
 
 #include "UI/CoreUiBlueprintFunctionLibrary.h"
 
+#include "Engine/LocalPlayer.h"
 #include "Settings/UnrealCoreFrameworkSettings.h"
 #include "SubSystems/LocalPlayer/UISubsystem.h"
+#include "UI/CorePage.h"
 #include "UI/CoreWidget.h"
 #include "VisualLogger/VisualLogger.h"
 
@@ -14,23 +16,31 @@ UCoreWidget* UCoreUiBlueprintFunctionLibrary::CreateViewportPage(UCoreWidget* Wi
 	if (!Widget)
 	{
 		UE_VLOG_UELOG(Widget, LogCoreUiFunctionLibrary, Error, TEXT("UCoreUiBlueprintFunctionLibrary::CreatePage - Widget is invalid"));
+		return nullptr;
 	}
 
 	APlayerController* PC = Widget->GetOwningPlayer();
 	if (!PC)
 	{
 		UE_VLOG_UELOG(Widget, LogCoreUiFunctionLibrary, Error, TEXT("UCoreUiBlueprintFunctionLibrary::CreatePage - Failed to get Player Controller"));
+		return nullptr;
 	}
 
-	/*UUISubsystem* UISubsystem = Widget->GetUISubsystem();
+	ULocalPlayer* LocalPlayer = Widget->GetOwningLocalPlayer();
+	if (!LocalPlayer)
+	{
+		UE_VLOG_UELOG(Widget, LogCoreUiFunctionLibrary, Error, TEXT("UCoreUiBlueprintFunctionLibrary::CreatePage - Failed to get Local Player"));
+		return nullptr;
+	}
+
+	UUISubsystem* UISubsystem = LocalPlayer->GetSubsystem<UUISubsystem>();
 	if (!UISubsystem)
 	{
 		UE_VLOG_UELOG(Widget, LogCoreUiFunctionLibrary, Error, TEXT("UCoreUiBlueprintFunctionLibrary::CreatePage - Failed to get UISubsystem"));
+		return nullptr;
 	}
 
-	return UISubsystem->CreateViewportPage(PC, PageClass);*/
-
-	return nullptr;
+	return UISubsystem->CreateViewportPage(PC, PageClass);
 }
 
 void UCoreUiBlueprintFunctionLibrary::RemoveViewportPage(UCoreWidget* Widget, UCorePage* Page)
@@ -38,26 +48,41 @@ void UCoreUiBlueprintFunctionLibrary::RemoveViewportPage(UCoreWidget* Widget, UC
 	if (!Widget)
 	{
 		UE_VLOG_UELOG(Widget, LogCoreUiFunctionLibrary, Error, TEXT("UCoreUiBlueprintFunctionLibrary::RemovePage - Widget is invalid"));
+		return;
 	}
 
-	/*if (UUISubsystem* UISubsystem = Widget->GetUISubsystem())
+	ULocalPlayer* LocalPlayer = Widget->GetOwningLocalPlayer();
+	if (!LocalPlayer)
+	{
+		return;
+	}
+
+	if (UUISubsystem* UISubsystem = LocalPlayer->GetSubsystem<UUISubsystem>())
 	{
 		UISubsystem->RemoveViewportPage(Cast<IPageableWidgetInterface>(Page));
-	}*/
+	}
 }
 
 bool UCoreUiBlueprintFunctionLibrary::AddWidgetToStack(UCoreWidget* Widget, const TSubclassOf<UCoreWidget> PageClass, const EWidgetContainerType StackContainerType, UCoreWidget*& OutCoreWidget)
 {
 	if (!Widget)
 	{
-		UE_VLOG_UELOG(Widget, LogCoreUiFunctionLibrary, Error, TEXT("UCoreUiBlueprintFunctionLibrary::RemovePage - Widget is invalid"));
+		UE_VLOG_UELOG(Widget, LogCoreUiFunctionLibrary, Error, TEXT("UCoreUiBlueprintFunctionLibrary::AddWidgetToStack - Widget is invalid"));
+		return false;
 	}
 
-	/*if (UUISubsystem* UISubsystem = Widget->GetUISubsystem())
+	ULocalPlayer* LocalPlayer = Widget->GetOwningLocalPlayer();
+	if (!LocalPlayer)
+	{
+		return false;
+	}
+
+	if (UUISubsystem* UISubsystem = LocalPlayer->GetSubsystem<UUISubsystem>())
 	{
 		OutCoreWidget = UISubsystem->AddWidgetToStack(PageClass, StackContainerType);
-		return true;
-	}*/
+		return OutCoreWidget != nullptr;
+	}
+
 	return false;
 }
 
@@ -65,13 +90,20 @@ void UCoreUiBlueprintFunctionLibrary::RemoveWidgetFromStack(UCoreWidget* Widget,
 {
 	if (!Widget)
 	{
-		UE_VLOG_UELOG(Widget, LogCoreUiFunctionLibrary, Error, TEXT("UCoreUiBlueprintFunctionLibrary::RemovePage - Widget is invalid"));
+		UE_VLOG_UELOG(Widget, LogCoreUiFunctionLibrary, Error, TEXT("UCoreUiBlueprintFunctionLibrary::RemoveWidgetFromStack - Widget is invalid"));
+		return;
 	}
 
-	/*if (UUISubsystem* UISubsystem = Widget->GetUISubsystem())
+	ULocalPlayer* LocalPlayer = Widget->GetOwningLocalPlayer();
+	if (!LocalPlayer)
+	{
+		return;
+	}
+
+	if (UUISubsystem* UISubsystem = LocalPlayer->GetSubsystem<UUISubsystem>())
 	{
 		UISubsystem->RemoveWidgetFromStack(*Widget, StackContainerType, Destroy);
-	}*/
+	}
 }
 
 void UCoreUiBlueprintFunctionLibrary::CreateMainHUD(UCoreWidget* Widget)
@@ -79,12 +111,19 @@ void UCoreUiBlueprintFunctionLibrary::CreateMainHUD(UCoreWidget* Widget)
 	if (!Widget)
 	{
 		UE_VLOG_UELOG(Widget, LogCoreUiFunctionLibrary, Error, TEXT("UCoreUiBlueprintFunctionLibrary::CreateMainHUD - Widget is invalid"));
+		return;
 	}
 
-	/*if (UUISubsystem* UISubsystem = Widget->GetUISubsystem())
+	ULocalPlayer* LocalPlayer = Widget->GetOwningLocalPlayer();
+	if (!LocalPlayer)
 	{
-		// UISubsystem->CreateMainPage(ECoreMainPageType::MainHUD);
-	}*/
+		return;
+	}
+
+	if (UUISubsystem* UISubsystem = LocalPlayer->GetSubsystem<UUISubsystem>())
+	{
+		UISubsystem->CreateMainUIContainer();
+	}
 }
 
 void UCoreUiBlueprintFunctionLibrary::CreateMainMenu(UCoreWidget* Widget)
@@ -92,12 +131,19 @@ void UCoreUiBlueprintFunctionLibrary::CreateMainMenu(UCoreWidget* Widget)
 	if (!Widget)
 	{
 		UE_VLOG_UELOG(Widget, LogCoreUiFunctionLibrary, Error, TEXT("UCoreUiBlueprintFunctionLibrary::CreateMainMenu - Widget is invalid"));
+		return;
 	}
 
-	/*if (UUISubsystem* UISubsystem = Widget->GetUISubsystem())
+	ULocalPlayer* LocalPlayer = Widget->GetOwningLocalPlayer();
+	if (!LocalPlayer)
 	{
-		// UISubsystem->CreateMainPage(ECoreMainPageType::MainMenu);
-	}*/
+		return;
+	}
+
+	if (UUISubsystem* UISubsystem = LocalPlayer->GetSubsystem<UUISubsystem>())
+	{
+		UISubsystem->CreateMainUIContainer();
+	}
 }
 
 void UCoreUiBlueprintFunctionLibrary::CreatePauseMenu(UCoreWidget* Widget)
@@ -105,26 +151,28 @@ void UCoreUiBlueprintFunctionLibrary::CreatePauseMenu(UCoreWidget* Widget)
 	if (!Widget)
 	{
 		UE_VLOG_UELOG(Widget, LogCoreUiFunctionLibrary, Error, TEXT("UCoreUiBlueprintFunctionLibrary::CreatePauseMenu - Widget is invalid"));
+		return;
 	}
 
-	/*if (UUISubsystem* UISubsystem = Widget->GetUISubsystem())
+	ULocalPlayer* LocalPlayer = Widget->GetOwningLocalPlayer();
+	if (!LocalPlayer)
 	{
-		// UISubsystem->CreateMainPage(ECoreMainPageType::PauseMenu);
-	}*/
+		return;
+	}
+
+	if (UUISubsystem* UISubsystem = LocalPlayer->GetSubsystem<UUISubsystem>())
+	{
+		UISubsystem->CreateMainUIContainer();
+	}
 }
 
 bool UCoreUiBlueprintFunctionLibrary::GetMainPage(UCoreWidget* Widget, ECoreMainPageType CoreMainPageType, UCoreWidget*& OutCoreWidget)
 {
 	if (!Widget)
 	{
-		UE_VLOG_UELOG(Widget, LogCoreUiFunctionLibrary, Error, TEXT("UCoreUiBlueprintFunctionLibrary::CreatePauseMenu - Widget is invalid"));
+		UE_VLOG_UELOG(Widget, LogCoreUiFunctionLibrary, Error, TEXT("UCoreUiBlueprintFunctionLibrary::GetMainPage - Widget is invalid"));
+		return false;
 	}
-
-	/*if (UUISubsystem* UISubsystem = Widget->GetUISubsystem())
-	{
-		// OutCoreWidget = UISubsystem->GetMainPage(CoreMainPageType);
-		return true;
-	}*/
 
 	return false;
 }
