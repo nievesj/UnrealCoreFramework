@@ -318,7 +318,7 @@ AsyncFlow::TTask<void> FCoreTweenBuilder::Run(UObject* WorldContext)
 	// Tween state for external tracking
 	TSharedPtr<FCoreTweenState> TweenState = MakeShared<FCoreTweenState>();
 	TweenState->Widget = WidgetPtr;
-	UCoreTween::RegisterTweenState(TweenState);
+	UCoreTween::RegisterTweenState(WorldContext, TweenState);
 
 	// Read current values from target for "from current" defaults
 	if (LocalTarget && LocalTarget->IsTargetValid())
@@ -375,6 +375,7 @@ AsyncFlow::TTask<void> FCoreTweenBuilder::Run(UObject* WorldContext)
 
 		if (!LocalTarget || !LocalTarget->IsTargetValid())
 		{
+			TweenState->FlowState.Reset();
 			TweenState->bFinished.store(true, std::memory_order_release);
 			co_return;
 		}
@@ -383,6 +384,7 @@ AsyncFlow::TTask<void> FCoreTweenBuilder::Run(UObject* WorldContext)
 		{
 			ApplyAllLocal(FCoreTweenEasing::Ease(LocalEasingType, 1.0f, LocalEasingParam));
 			LocalOnCompleteDelegate.ExecuteIfBound();
+			TweenState->FlowState.Reset();
 			TweenState->bFinished.store(true, std::memory_order_release);
 			co_return;
 		}
@@ -438,6 +440,7 @@ AsyncFlow::TTask<void> FCoreTweenBuilder::Run(UObject* WorldContext)
 
 	// Fire OnComplete callback
 	LocalOnCompleteDelegate.ExecuteIfBound();
+	TweenState->FlowState.Reset();
 	TweenState->bFinished.store(true, std::memory_order_release);
 }
 
