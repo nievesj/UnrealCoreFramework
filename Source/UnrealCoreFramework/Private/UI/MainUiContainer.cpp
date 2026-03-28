@@ -8,13 +8,22 @@ void UMainUiContainer::RemoveWidgetFromStack(UCoreWidget& Widget, const EWidgetC
 	switch (StackContainerType)
 	{
 		case EWidgetContainerType::HUD:
-			HUDStack->RemoveWidget(Widget);
+			if (HUDStack)
+			{
+				HUDStack->RemoveWidget(Widget);
+			}
 			break;
 		case EWidgetContainerType::Page:
-			PageStack->RemoveWidget(Widget);
+			if (PageStack)
+			{
+				PageStack->RemoveWidget(Widget);
+			}
 			break;
 		case EWidgetContainerType::Modal:
-			ModalStack->RemoveWidget(Widget);
+			if (ModalStack)
+			{
+				ModalStack->RemoveWidget(Widget);
+			}
 			break;
 	}
 }

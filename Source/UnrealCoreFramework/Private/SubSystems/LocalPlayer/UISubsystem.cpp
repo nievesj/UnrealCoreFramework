@@ -5,6 +5,7 @@
 #include "Settings/UnrealCoreFrameworkSettings.h"
 #include "UI/CoreHUD.h"
 #include "UI/MainUiContainer.h"
+#include "UI/UiCoreFrameworkTypes.h"
 #include "VisualLogger/VisualLogger.h"
 
 DEFINE_LOG_CATEGORY(LogUISubsystem);
@@ -32,10 +33,13 @@ UCoreWidget* UUISubsystem::CreateViewportPage(APlayerController* Owner, TSubclas
 	if (UCoreWidget* Page = CreateWidget<UCoreWidget>(Owner, PageClass))
 	{
 		Page->AddToViewport();
-		// IPageableWidgetInterface* PageInt = Cast<IPageableWidgetInterface>(Page);
+		CoreWidgetsOpen.Push(Page);
 
-		// CoreWidgetsOpen.Push(PageInt);
-		// PageInt->Open();
+		if (IPageableWidgetInterface* PageInt = Cast<IPageableWidgetInterface>(Page))
+		{
+			PageInt->Open();
+		}
+
 		UE_VLOG_UELOG(this, LogUISubsystem, Log, TEXT("Created Page %s"), *Page->GetName());
 		return Page;
 	}
@@ -48,9 +52,10 @@ void UUISubsystem::RemoveViewportPage(IPageableWidgetInterface* Page)
 {
 	if (Page)
 	{
-		// CoreWidgetsOpen.Remove(Page);
 		if (UCoreWidget* Widget = Cast<UCoreWidget>(Page))
 		{
+			CoreWidgetsOpen.Remove(Widget);
+
 			if (APlayerController* PC = Widget->GetOwningPlayer())
 			{
 				SetPlayerControllerInput(PC, ShouldDisablePlayerControllerInput());
@@ -63,12 +68,15 @@ void UUISubsystem::RemoveViewportPage(IPageableWidgetInterface* Page)
 
 void UUISubsystem::RemoveAllViewportPages()
 {
-	/*for (IPageableWidgetInterface* Page : CoreWidgetsOpen)
+	for (UCoreWidget* Widget : CoreWidgetsOpen)
 	{
-		Page->Close();
+		if (IPageableWidgetInterface* Page = Cast<IPageableWidgetInterface>(Widget))
+		{
+			Page->Close();
+		}
 	}
 
-	CoreWidgetsOpen.Empty();*/
+	CoreWidgetsOpen.Empty();
 }
 
 UCoreWidget* UUISubsystem::AddWidgetToStack(const TSubclassOf<UCoreWidget>& PageClass, const EWidgetContainerType& StackContainerType)
@@ -76,9 +84,13 @@ UCoreWidget* UUISubsystem::AddWidgetToStack(const TSubclassOf<UCoreWidget>& Page
 	if (!MainUiContainer)
 	{
 		UE_VLOG_UELOG(this, LogUISubsystem, Error, TEXT("UUISubsystem::AddWidgetToStack - MainUiContainer is invalid"));
+		return nullptr;
 	}
 	UCoreWidget* Widget = MainUiContainer->AddWidgetToStack(PageClass, StackContainerType);
-	// Widget->Show();
+	if (Widget)
+	{
+		Widget->Show();
+	}
 	return Widget;
 }
 
@@ -87,6 +99,7 @@ void UUISubsystem::RemoveWidgetFromStack(UCoreWidget& Widget, const EWidgetConta
 	if (!MainUiContainer)
 	{
 		UE_VLOG_UELOG(this, LogUISubsystem, Error, TEXT("UUISubsystem::RemoveWidgetFromStack - MainUiContainer is invalid"));
+		return;
 	}
 
 	MainUiContainer->RemoveWidgetFromStack(Widget, StackContainerType);
@@ -94,7 +107,13 @@ void UUISubsystem::RemoveWidgetFromStack(UCoreWidget& Widget, const EWidgetConta
 
 IPageableWidgetInterface* UUISubsystem::GetTopPage()
 {
-	// return CoreWidgetsOpen.Top();
+	for (int32 i = CoreWidgetsOpen.Num() - 1; i >= 0; --i)
+	{
+		if (IPageableWidgetInterface* Page = Cast<IPageableWidgetInterface>(CoreWidgetsOpen[i]))
+		{
+			return Page;
+		}
+	}
 	return nullptr;
 }
 
@@ -126,25 +145,26 @@ void UUISubsystem::CreateMainUIContainer()
 		MainUiContainer = Cast<UMainUiContainer>(Widget);
 
 		UCorePage* Page = MainUiContainer->AddWidgetToStack<UCorePage>(Settings->MainMenuPage, EWidgetContainerType::Page);
-		// Page->Open();
+		if (Page)
+		{
+			Page->Open();
+		}
 	}
 }
 
 bool UUISubsystem::ShouldDisablePlayerControllerInput()
 {
-	if (CoreWidgetsOpen.IsEmpty())
+	for (UCoreWidget* Widget : CoreWidgetsOpen)
 	{
-		return false;
-	}
-
-	/*for (const IPageableWidgetInterface* Page : CoreWidgetsOpen)
-	{
-		if (Page->DisablePlayerControllerInput)
+		if (const IPageableWidgetInterface* Page = Cast<IPageableWidgetInterface>(Widget))
 		{
-			return true;
+			if (Page->GetDisablePlayerInput())
+			{
+				return true;
+			}
 		}
 	}
-*/
+
 	return false;
 }
 
@@ -168,6 +188,7 @@ void UUISubsystem::SetPlayerControllerInput(APlayerController* PC, bool IsDisabl
 
 void UUISubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
+	Super::Initialize(Collection);
 	UE_VLOG_UELOG(this, LogUISubsystem, Log, TEXT("Initializing UI Subsystem"));
 }
 
@@ -175,3 +196,20 @@ void UUISubsystem::Deinitialize()
 {
 	UE_LOG(LogUISubsystem, Warning, TEXT("Deinitializing UI Subsystem"))
 }
+
+void UUISubsystem::GoBack()
+{
+	if (PageHistory.Num() == 0)
+	{
+		UE_VLOG_UELOG(this, LogUISubsystem, Warning, TEXT("GoBack: No pages in history."));
+		return;
+	}
+
+	const TSubclassOf<UCorePage> PreviousPageClass = PageHistory.Pop();
+
+	if (MainUiContainer)
+	{
+		AddWidgetToStack(PreviousPageClass, EWidgetContainerType::Page);
+	}
+}
+
