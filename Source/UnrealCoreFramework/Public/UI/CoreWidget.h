@@ -79,6 +79,18 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CoreWidget)
 	FCoreWidgetAnimationSettings CoreWidgetAnimationSettings;
 
+	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))
+	TObjectPtr<UWidgetAnimation> IntroAnimation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CoreWidget|Animation")
+	FWidgetAnimationOptions IntroAnimationOptions;
+
+	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))
+	TObjectPtr<UWidgetAnimation> OutroAnimation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CoreWidget|Animation")
+	FWidgetAnimationOptions OutroAnimationOptions;
+
 	/** Helper object for managing animations */
 	UPROPERTY(Transient)
 	TObjectPtr<UTweenManagerSubsystem> TweenManagerSubsystem = nullptr;

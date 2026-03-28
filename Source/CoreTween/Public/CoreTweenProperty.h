@@ -46,6 +46,10 @@ public:
 			StartValue = InCurrentValue;
 			CurrentValue = InCurrentValue;
 		}
+		if (!bHasTarget)
+		{
+			TargetValue = InCurrentValue;
+		}
 	}
 
 	/**
@@ -103,6 +107,10 @@ public:
 		{
 			StartValue = InCurrentValue;
 			CurrentValue = InCurrentValue;
+		}
+		if (!bHasTarget)
+		{
+			TargetValue = InCurrentValue;
 		}
 	}
 

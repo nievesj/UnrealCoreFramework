@@ -36,8 +36,15 @@ public:
 	UCoreWidget* AddWidgetToStack(const TSubclassOf<UCoreWidget>& PageClass, const EWidgetContainerType& StackContainerType);
 	void		 RemoveWidgetFromStack(UCoreWidget& Widget, const EWidgetContainerType& StackContainerType, bool Destroy = false);
 
+	/** Navigate back to the previous page in history. */
+	void GoBack();
+
+
+	/** Creates the main UI container from settings. */
+	void CreateMainUIContainer();
+
+	/** Returns the top-most page in the open widget stack. */
 	IPageableWidgetInterface* GetTopPage();
-	void					  CreateMainUIContainer();
 
 	UMainUiContainer* GetMainUIContainer() const
 	{
@@ -45,7 +52,7 @@ public:
 	};
 
 	bool ShouldDisablePlayerControllerInput();
-	void SetPlayerControllerInput(APlayerController* PC, bool IsDisabled);
+	void SetPlayerControllerInput(APlayerController* PC, bool bIsDisabled);
 
 protected:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
@@ -54,6 +61,9 @@ protected:
 private:
 	UPROPERTY(Transient)
 	TArray<UCoreWidget*> CoreWidgetsOpen;
+
+	UPROPERTY(Transient)
+	TArray<TSubclassOf<UCorePage>> PageHistory;
 
 	UPROPERTY(Transient)
 	UMainUiContainer* MainUiContainer;

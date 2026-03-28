@@ -9,7 +9,10 @@ void UPlayerHealthViewModel::Initialize()
 {
 	UCoreHealthComponent* HealthComp = GetSourceAs<UCoreHealthComponent>();
 	if (!IsValid(HealthComp))
+	{
 		UE_LOG(LogCoreViewModel, Error, TEXT("PlayerHealthViewModel: Could not cast health component"));
+		return;
+	}
 
 	HealthComponent = HealthComp;
 

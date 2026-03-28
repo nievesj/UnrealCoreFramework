@@ -53,6 +53,12 @@ UDataAsset* UDataAssetManagerSubsystem::LoadDataAssetByPrimaryAssetId(const FPri
 		}
 	}
 
+	if (!IsValid(AssetManager))
+	{
+		UE_LOG(LogDataAssetManagerSubsystem, Warning, TEXT("DataAssetManagerSubsystem: AssetManager is not initialized"));
+		return nullptr;
+	}
+
 	FSoftObjectPath AssetPath = AssetManager->GetPrimaryAssetPath(AssetId);
 	if (!AssetPath.IsValid())
 	{
@@ -218,6 +224,12 @@ bool UDataAssetManagerSubsystem::IsAssetLoaded(const FPrimaryAssetId& AssetId) c
 
 void UDataAssetManagerSubsystem::PreloadAssets(const TArray<FPrimaryAssetId>& AssetIds)
 {
+	if (!IsValid(AssetManager))
+	{
+		UE_LOG(LogDataAssetManagerSubsystem, Warning, TEXT("DataAssetManagerSubsystem: AssetManager is not initialized"));
+		return;
+	}
+
 	AssetManager->LoadPrimaryAssets(AssetIds);
 
 	for (const FPrimaryAssetId& AssetId : AssetIds)

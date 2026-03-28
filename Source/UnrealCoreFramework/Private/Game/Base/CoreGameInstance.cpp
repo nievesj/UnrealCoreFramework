@@ -30,9 +30,11 @@ void UCoreGameInstance::OnStart()
 	{
 		if (const ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
 		{
-			UUISubsystem* UISubsystem = LocalPlayer->GetSubsystem<UUISubsystem>();
-			UISubsystem->CreateMainUIContainer();
-			UE_VLOG_UELOG(this, LogCoreGameInstance, Log, TEXT("Created Main UI Container"));
+			if (UUISubsystem* UISubsystem = LocalPlayer->GetSubsystem<UUISubsystem>())
+			{
+				UISubsystem->CreateMainUIContainer();
+				UE_VLOG_UELOG(this, LogCoreGameInstance, Log, TEXT("Created Main UI Container"));
+			}
 		}
 	}
 }
@@ -64,9 +66,11 @@ FGameInstancePIEResult UCoreGameInstance::StartPlayInEditorGameInstance(ULocalPl
 
 	if (LocalPlayer)
 	{
-		UUISubsystem* UISubsystem = LocalPlayer->GetSubsystem<UUISubsystem>();
-		UISubsystem->CreateMainUIContainer();
-		UE_VLOG_UELOG(this, LogCoreGameInstance, Log, TEXT("Created Main UI Container"));
+		if (UUISubsystem* UISubsystem = LocalPlayer->GetSubsystem<UUISubsystem>())
+		{
+			UISubsystem->CreateMainUIContainer();
+			UE_VLOG_UELOG(this, LogCoreGameInstance, Log, TEXT("Created Main UI Container"));
+		}
 	}
 
 	return Result;

@@ -20,7 +20,7 @@ void APoolableActor::OnReleased_Implementation()
 	SetActorEnableCollision(false);
 	SetActorTickEnabled(false);
 
-	ResetToPool_Implementation();
+	Execute_ResetToPool(this);
 }
 
 void APoolableActor::ResetToPool_Implementation()

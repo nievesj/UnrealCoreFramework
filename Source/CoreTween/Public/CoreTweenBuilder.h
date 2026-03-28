@@ -38,6 +38,9 @@ struct CORETWEEN_API FCoreTweenState
 
 	/** True once the coroutine has finished (naturally, cancelled, or force-completed). */
 	std::atomic<bool> bFinished{false};
+
+	/** Keeps the coroutine alive until completion. Cleared when finished. */
+	AsyncFlow::TTask<void> RunningTask;
 };
 
 /**
