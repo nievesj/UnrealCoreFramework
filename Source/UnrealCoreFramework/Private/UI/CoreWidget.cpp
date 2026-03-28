@@ -1,25 +1,22 @@
-﻿#pragma once
+﻿// CoreWidget.cpp
 #include "UI/CoreWidget.h"
 
+#include "Async/CoreAsyncTypes.h"
 #include "Animation/UMGSequencePlayer.h"
-#include "Engine/Engine.h"
-#include "Engine/GameViewportClient.h"
 #include "Tools/SubsystemHelper.h"
 #include "Tween/TweenManagerSubsystem.h"
-#include "VisualLogger/VisualLogger.h"
 
 DEFINE_LOG_CATEGORY(LogCoreWidget);
 
 UUMGSequencePlayer* UCoreWidget::GetSequencePlayer(UWidgetAnimation* InAnimation)
 {
-	return nullptr; // GetOrAddSequencePlayer(InAnimation);
+	return nullptr;
 }
 
 void UCoreWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
 
-	// Get the animation helper
 	TweenManagerSubsystem = USubsystemHelper::GetSubsystem<UTweenManagerSubsystem>(this);
 }
 
@@ -31,14 +28,13 @@ void UCoreWidget::Show()
 			PlayTweenTransition(CoreWidgetAnimationSettings.TweenEntranceOptions, EWidgetTransitionMode::Intro);
 			break;
 		case EWidgetAnimationType::WidgetAnimation:
-			/*if (WidgetAnimationIntro)
-			{
-				PlayWidgetAnimation(WidgetAnimationIntro, WidgetAnimationOptionsIntro, EWidgetTransitionMode::Intro);
-			}*/
+			InternalShown();
 			break;
 		case EWidgetAnimationType::None:
+			InternalShown();
 			break;
 		case EWidgetAnimationType::CommonUiDefault:
+			InternalShown();
 			break;
 	}
 }
@@ -51,28 +47,43 @@ void UCoreWidget::Hide()
 			PlayTweenTransition(CoreWidgetAnimationSettings.TweenExitOptions, EWidgetTransitionMode::Outtro);
 			break;
 		case EWidgetAnimationType::WidgetAnimation:
+			InternalHidden();
 			break;
 		case EWidgetAnimationType::None:
+			InternalHidden();
 			break;
 		case EWidgetAnimationType::CommonUiDefault:
+			InternalHidden();
 			break;
 	}
 }
 
+AsyncFlow::TTask<void> UCoreWidget::ShowTask()
+{
+	if (!IsValid(TweenManagerSubsystem))
+	{
+		UE_LOG(LogCoreWidget, Warning, TEXT("[CoreWidget] ShowTask — TweenManagerSubsystem is invalid on %s"), *GetName());
+		co_return;
+	}
+
+	co_await TweenManagerSubsystem->PlayWidgetTransitionEffectTask(
+		this, CoreWidgetAnimationSettings.TweenEntranceOptions, EWidgetTransitionMode::Intro);
+}
+
+AsyncFlow::TTask<void> UCoreWidget::HideTask()
+{
+	if (!IsValid(TweenManagerSubsystem))
+	{
+		UE_LOG(LogCoreWidget, Warning, TEXT("[CoreWidget] HideTask — TweenManagerSubsystem is invalid on %s"), *GetName());
+		co_return;
+	}
+
+	co_await TweenManagerSubsystem->PlayWidgetTransitionEffectTask(
+		this, CoreWidgetAnimationSettings.TweenExitOptions, EWidgetTransitionMode::Outtro);
+}
+
 void UCoreWidget::PlayWidgetAnimation(UWidgetAnimation* Anim, const FWidgetAnimationOptions& WidgetAnimationOptions, const EWidgetTransitionMode WidgetTransitionMode)
 {
-	/*UUMGSequencePlayer*         Player = GetOrAddSequencePlayer(Anim);
-	TWeakObjectPtr<UCoreWidget> WeakThis = this;
-	Player->OnSequenceFinishedPlaying().AddLambda(
-		[WidgetTransitionMode, WeakThis](UUMGSequencePlayer& Player) {
-			if (UCoreWidget* Widget = WeakThis.Get())
-			{
-				Widget->OnAnimationCompleted(WidgetTransitionMode);
-			}
-		}
-		);
-
-	PlayAnimation(Anim, WidgetAnimationOptions.StartAtTime, WidgetAnimationOptions.NumberOfLoops, WidgetAnimationOptions.PlayMode, WidgetAnimationOptions.PlaybackSpeed);*/
 }
 
 void UCoreWidget::InternalShown()
@@ -88,19 +99,28 @@ void UCoreWidget::InternalHidden()
 void UCoreWidget::PlayTweenTransition(const FWidgetTweenTransitionOptions& TweenTransitionOptions, const EWidgetTransitionMode WidgetTransitionMode)
 {
 	if (!IsValid(TweenManagerSubsystem))
+	{
+		UE_LOG(LogCoreWidget, Warning, TEXT("[CoreWidget] PlayTweenTransition: TweenManagerSubsystem is null on [%s] — skipping."), *GetName());
+		if (WidgetTransitionMode == EWidgetTransitionMode::Intro)
+		{
+			InternalShown();
+		}
+		else
+		{
+			InternalHidden();
+		}
 		return;
+	}
 
 	TweenManagerSubsystem->PlayWidgetTransitionEffect(this, TweenTransitionOptions, WidgetTransitionMode);
 }
 
 void UCoreWidget::OnAnimationStarted(const EWidgetTransitionMode& TransitionMode)
 {
-	UE_LOG(LogTemp, Error, TEXT("OnAnimationStarted%s"), *GetName());
 }
 
 void UCoreWidget::OnAnimationCompleted(const EWidgetTransitionMode& TransitionMode)
 {
-	UE_LOG(LogTemp, Error, TEXT("OnAnimationCompleted %s"), *GetName());
 	switch (TransitionMode)
 	{
 		case EWidgetTransitionMode::Intro:
@@ -111,12 +131,13 @@ void UCoreWidget::OnAnimationCompleted(const EWidgetTransitionMode& TransitionMo
 			break;
 	}
 }
+
 void UCoreWidget::NativeOnActivated()
 {
 	Super::NativeOnActivated();
-
 	Show();
 }
+
 void UCoreWidget::NativeOnDeactivated()
 {
 	Super::NativeOnDeactivated();

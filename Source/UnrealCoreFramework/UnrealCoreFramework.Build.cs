@@ -36,13 +36,11 @@ public class UnrealCoreFramework : ModuleRules
 				"CommonUI",
 				"Json",
 				"JsonUtilities",
-				"EnhancedInput", 
-				"CommonUI", 
+				"EnhancedInput",
 				"ModelViewViewModel",
-				"FieldNotification"
-
-
-				// ... add other public dependencies that you statically link with here ...
+				"FieldNotification",
+				"AsyncFlow",
+				"CoreTween"
 			}
 		);
 
@@ -54,8 +52,7 @@ public class UnrealCoreFramework : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				"BUITween", "OnlineSubsystemUtils", "OnlineSubsystemUtils"
-				// ... add private dependencies that you statically link with here ...	
+				"OnlineSubsystemUtils"
 			}
 		);
 

@@ -1,19 +1,15 @@
 ﻿#pragma once
 
-#include "LevelManagerSubsystem.generated.h"
+#include "Subsystems/GameInstanceSubsystem.h"
+#include "AsyncFlowTask.h"
 
-/**
- *
- */
+#include "LevelManagerSubsystem.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLevelLoadingStarted, FString, LevelName);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLevelLoadingComplete, FString, LevelName);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnLevelLoadingError, FString, LevelName, FString, ErrorMessage);
-
-// Define callback type for lambda
-DECLARE_DELEGATE_OneParam(FLevelLoadingCallback, bool);
 
 UENUM(BlueprintType)
 enum class ELevelLoadMethod : uint8
@@ -29,62 +25,75 @@ enum class ELevelOperation : uint8
 	Stream UMETA(DisplayName = "Stream (Add Level)")
 };
 
+/**
+ * Subsystem for managing level loading and unloading operations.
+ * Async APIs return AsyncFlow::TTask<bool> coroutines.
+ */
 UCLASS()
 class UNREALCOREFRAMEWORK_API ULevelManagerSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 
 public:
-	// Initialize and Deinitialize
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
 	/**
-	 * Loads a level with the specified operation mode
-	 * @param LevelPath - Path to the level
-	 * @param Operation - Whether to open the level (switching to it) or stream it (adding to current world)
-	 * @param LoadMethod - Synchronous or Asynchronous loading
+	 * Load a level by path (Blueprint entry point).
+	 * Internally launches a coroutine task.
+	 * @param LevelPath Path to the level
+	 * @param Operation Open (full map travel) or Stream (additive)
+	 * @param LoadMethod Synchronous or Asynchronous
 	 */
-	UFUNCTION(BlueprintCallable, Category = "Level Management", meta = (AutoCreateRefTerm = "Callback"))
+	UFUNCTION(BlueprintCallable, Category = "Level Management")
 	void LoadLevel(const FString& LevelPath,
-		ELevelOperation			  Operation = ELevelOperation::Open,
-		ELevelLoadMethod		  LoadMethod = ELevelLoadMethod::Async);
+		ELevelOperation Operation = ELevelOperation::Open,
+		ELevelLoadMethod LoadMethod = ELevelLoadMethod::Async);
 
 	/**
-	 * Loads a level using soft object reference
-	 * @param Level - Soft reference to the level
-	 * @param Operation - Whether to open the level (switching to it) or stream it (adding to current world)
-	 * @param LoadMethod - Synchronous or Asynchronous loading
+	 * Load a level via soft object reference (Blueprint entry point).
+	 * @param Level Soft reference to the level
+	 * @param Operation Open or Stream
+	 * @param LoadMethod Synchronous or Asynchronous
 	 */
-	UFUNCTION(BlueprintCallable, Category = "Level Management", meta = (AutoCreateRefTerm = "Callback"))
+	UFUNCTION(BlueprintCallable, Category = "Level Management")
 	void LoadLevelSoftObject(const TSoftObjectPtr<UWorld>& Level,
-		ELevelOperation									   Operation = ELevelOperation::Open,
-		ELevelLoadMethod								   LoadMethod = ELevelLoadMethod::Async);
+		ELevelOperation Operation = ELevelOperation::Open,
+		ELevelLoadMethod LoadMethod = ELevelLoadMethod::Async);
 
-	// C++ versions with callback support
-	void LoadLevel(const FString&	 LevelPath,
-		const FLevelLoadingCallback& Callback,
-		ELevelOperation				 Operation = ELevelOperation::Open,
-		ELevelLoadMethod			 LoadMethod = ELevelLoadMethod::Async);
+	/**
+	 * Load a level asynchronously via coroutine.
+	 * @param LevelPath Path to the level
+	 * @param Operation Open or Stream
+	 * @return TTask<bool> that resolves to true on success
+	 */
+	AsyncFlow::TTask<bool> LoadLevelTask(const FString& LevelPath, ELevelOperation Operation = ELevelOperation::Open);
 
-	void LoadLevel(const TSoftObjectPtr<UWorld>& Level,
-		const FLevelLoadingCallback&			 Callback,
-		ELevelOperation							 Operation = ELevelOperation::Open,
-		ELevelLoadMethod						 LoadMethod = ELevelLoadMethod::Async);
+	/**
+	 * Load a level asynchronously via coroutine (soft object variant).
+	 * @param Level Soft reference to the level
+	 * @param Operation Open or Stream
+	 * @return TTask<bool> that resolves to true on success
+	 */
+	AsyncFlow::TTask<bool> LoadLevelTask(const TSoftObjectPtr<UWorld>& Level, ELevelOperation Operation = ELevelOperation::Open);
 
-	// Unload level
+	/**
+	 * Unload a streaming level asynchronously via coroutine.
+	 * @param LevelPath Path to the streaming level to unload
+	 * @return TTask<bool> that resolves to true on success
+	 */
+	AsyncFlow::TTask<bool> UnloadLevelTask(const FString& LevelPath);
+
+	/** Unload a level (Blueprint entry point, fire-and-forget). */
 	UFUNCTION(BlueprintCallable, Category = "Level Management")
 	void UnloadLevel(const FString& LevelPath);
 
-	// Check if level is loaded
 	UFUNCTION(BlueprintPure, Category = "Level Management")
 	bool IsLevelLoaded(const FString& LevelPath) const;
 
-	// Check if level is currently loading
 	UFUNCTION(BlueprintPure, Category = "Level Management")
 	bool IsLevelLoading(const FString& LevelPath) const;
 
-	// Events
 	UPROPERTY(BlueprintAssignable, Category = "Level Management|Events")
 	FOnLevelLoadingStarted OnLevelLoadingStarted;
 
@@ -94,54 +103,12 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Level Management|Events")
 	FOnLevelLoadingError OnLevelLoadingError;
 
-	UFUNCTION()
-	void HandleLoadingComplete(const FString& LevelPath);
-
 private:
-	// Helper function to handle level loading completion
-
-private:
-	FDelegateHandle LevelLoadHandle;
-
-	UFUNCTION()
-	void OnLevelOpenComplete(UWorld* World);
-
-	FString PendingLevelPath;
-
-	// Map to track loading states
+	/** Map to track loading states */
 	TMap<FString, bool> LoadingLevels;
 
-	// Validate level path
+	/** Active level load/unload tasks for concurrent operations and cancellation */
+	TMap<FString, AsyncFlow::TTask<bool>> ActiveLevelTasks;
+
 	static bool ValidateLevelPath(const FString& LevelPath);
-
-	// Map to store callbacks
-	TMap<FString, FLevelLoadingCallback> LoadingCallbacks;
-};
-
-UCLASS()
-class ULevelLoadingCallbackHelper : public UObject
-{
-	GENERATED_BODY()
-
-public:
-	FLevelLoadingCallback Callback;
-	FString				  LevelPath;
-
-	UPROPERTY(Transient)
-	ULevelManagerSubsystem* LevelManager;
-
-	UFUNCTION()
-	void OnLevelLoaded() const
-	{
-		if (IsValid(LevelManager))
-		{
-			// Let the manager handle the callback
-			LevelManager->HandleLoadingComplete(LevelPath);
-		}
-		else if (Callback.IsBound())
-		{
-			// Fallback if manager is gone
-			Callback.Execute(true);
-		}
-	}
 };

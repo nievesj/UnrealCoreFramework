@@ -14,6 +14,8 @@ class UNREALCOREFRAMEWORK_API ACoreHUD : public AHUD
 	GENERATED_BODY()
 
 public:
+	virtual void BeginPlay() override;
+
 	UFUNCTION(BlueprintCallable, Category = UnrealCoreFrameworkSettings)
 	virtual void ShowMainHUD();
 

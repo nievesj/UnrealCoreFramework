@@ -41,19 +41,3 @@ void UCoreWorldSubsystem::Deinitialize()
 	UE_LOG(LogCoreWorldSubsystem, Log, TEXT("Initialize UCoreWorldSubsystem"));
 }
 
-/*TFuture<void> UCoreWorldSubsystem::SlowTaskAsync()
-{
-	return Async(
-			   EAsyncExecution::TaskGraphMainThread,
-			   []()
-			   {
-				   // ExecuteSlowTask();
-			   }
-	)
-		.Then(
-			[](auto Future)
-			{
-				// DoSomethingElseAfterward();
-			}
-		);
-}*/

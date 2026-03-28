@@ -4,21 +4,19 @@
 #include "Engine/StreamableManager.h"
 #include "SubSystems/Base/CoreGameInstanceSubsystem.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+#include "AsyncFlowTask.h"
 
 #include "DataAssetManagerSubSystem.generated.h"
 
-/** Log category for debugging and monitoring data asset operations */
 DECLARE_LOG_CATEGORY_EXTERN(LogDataAssetManagerSubsystem, Log, All);
 
 /** Blueprint-compatible delegate for asset loading completion events */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDataAssetLoaded, UDataAsset*, LoadedAsset, bool, bSuccess);
 
-/** TFunction callback type for C++ usage */
-DECLARE_DELEGATE_TwoParams(FOnDataAssetLoadedDelegate, UDataAsset*, bool);
-
 /**
  * Centralized subsystem for managing Primary Data Assets throughout the game.
  * Provides synchronous and asynchronous loading, caching, and registry functionality.
+ * Async APIs return AsyncFlow::TTask<T> coroutines.
  */
 UCLASS()
 class UNREALCOREFRAMEWORK_API UDataAssetManagerSubsystem : public UCoreGameInstanceSubsystem
@@ -26,10 +24,7 @@ class UNREALCOREFRAMEWORK_API UDataAssetManagerSubsystem : public UCoreGameInsta
 	GENERATED_BODY()
 
 public:
-	/** Initialize the subsystem when the game instance starts */
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
-
-	/** Clean up resources when the subsystem shuts down */
 	virtual void Deinitialize() override;
 
 	/**
@@ -52,24 +47,24 @@ public:
 	/**
 	 * Load a data asset asynchronously using its Primary Asset ID.
 	 * @param AssetId The unique identifier for the asset to load
-	 * @param OnLoaded Callback function called when loading completes
+	 * @return TTask that resolves to the loaded UDataAsset* (nullptr on failure)
 	 */
-	void LoadDataAssetAsync(FPrimaryAssetId AssetId, TFunction<void(UDataAsset*, bool)> OnLoaded);
+	AsyncFlow::TTask<UDataAsset*> LoadDataAssetAsyncTask(FPrimaryAssetId AssetId);
 
 	/**
 	 * Load a data asset asynchronously by class and name.
 	 * @param AssetClass The class type of the asset to load
 	 * @param AssetName The name of the asset to load
-	 * @param OnLoaded Callback function called when loading completes
+	 * @return TTask that resolves to the loaded UDataAsset* (nullptr on failure)
 	 */
-	void LoadDataAssetByClassAsync(const TSubclassOf<UDataAsset>& AssetClass, const FString& AssetName, const TFunction<void(UDataAsset*, bool)>& OnLoaded);
+	AsyncFlow::TTask<UDataAsset*> LoadDataAssetByClassAsyncTask(TSubclassOf<UDataAsset> AssetClass, const FString& AssetName);
 
 	/**
 	 * Load all assets of a specific type asynchronously.
 	 * @param AssetClass The class type of assets to load
-	 * @param OnEachLoaded Callback called for each asset as it finishes loading
+	 * @return TTask that resolves to an array of loaded UDataAsset*
 	 */
-	void LoadAllDataAssetsOfTypeAsync(const TSubclassOf<UDataAsset>& AssetClass, const TFunction<void(UDataAsset*, bool)>& OnEachLoaded);
+	AsyncFlow::TTask<TArray<UDataAsset*>> LoadAllDataAssetsOfTypeAsyncTask(TSubclassOf<UDataAsset> AssetClass);
 
 	/**
 	 * Load all data assets of a specific type synchronously.
@@ -81,6 +76,7 @@ public:
 
 	/**
 	 * Get all registered Primary Asset IDs in the system.
+	 * @param AssetClass The class to query
 	 * @return Array of all available asset IDs
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Data Asset Manager")
@@ -117,13 +113,6 @@ public:
 	FOnDataAssetLoaded OnDataAssetLoaded;
 
 protected:
-	/**
-	 * Internal callback handler for async loading operations.
-	 * @param AssetId The ID of the asset that finished loading
-	 * @param OnLoaded The user callback to execute
-	 */
-	void HandleAssetLoadedFunction(const FPrimaryAssetId& AssetId, const TFunction<void(UDataAsset*, bool)>& OnLoaded);
-
 	bool IsAssetCached(const FPrimaryAssetId& AssetId, UDataAsset*& OutCachedDataAsset) const;
 
 	UPROPERTY(Transient)
@@ -133,6 +122,7 @@ protected:
 	UPROPERTY(Transient)
 	TMap<FPrimaryAssetId, TObjectPtr<UDataAsset>> LoadedAssets;
 
-	/** Handles for ongoing async loading operations */
-	TMap<FPrimaryAssetId, TSharedPtr<FStreamableHandle>> AsyncHandles;
+	/** Active async load tasks, keyed by asset ID for cancellation on teardown */
+	TMap<FPrimaryAssetId, AsyncFlow::TTask<UDataAsset*>> ActiveLoadTasks;
 };
+

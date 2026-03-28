@@ -4,6 +4,7 @@
 #include "Blueprint/UserWidget.h"
 #include "CommonActivatableWidget.h"
 #include "UiCoreFrameworkTypes.h"
+#include "AsyncFlowTask.h"
 
 #include "CoreWidget.generated.h"
 
@@ -28,6 +29,16 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = CoreWidget)
 	void Hide();
+
+	/**
+	 * Show this widget and co_await until the intro animation completes.
+	 */
+	AsyncFlow::TTask<void> ShowTask();
+
+	/**
+	 * Hide this widget and co_await until the outro animation completes.
+	 */
+	AsyncFlow::TTask<void> HideTask();
 
 	UFUNCTION(BlueprintImplementableEvent, Category = CoreWidget)
 	void OnShown();

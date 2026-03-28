@@ -37,6 +37,4 @@ public:
 
 	/** Implement this for deinitialization of instances of the system */
 	virtual void Deinitialize() override;
-
-	TFuture<void> SlowTaskAsync();
 };

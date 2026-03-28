@@ -6,10 +6,9 @@
 
 #include "UiCoreFrameworkTypes.generated.h"
 
-enum class ETweenEaseType : uint8;
 enum class ETransitionCurve : uint8;
 enum class ECommonSwitcherTransition : uint8;
-enum class EBUIEasingType : uint8;
+enum class ECoreTweenEasingType : uint8;
 
 namespace EUMGSequencePlayMode
 {
@@ -86,7 +85,7 @@ struct FWidgetTweenTransitionOptions
 	EWidgetTranslationType WidgetTranslationType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = WidgetTransitionOptions)
-	EBUIEasingType EasingType;
+	ECoreTweenEasingType EasingType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = WidgetTransitionOptions)
 	float TransitionTime = 0.5f;

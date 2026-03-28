@@ -1,16 +1,18 @@
 ﻿#include "Tween/TweenManagerSubsystem.h"
 
-#include "BUITween.h"
-#include "BUITweenInstance.h"
+#include "Async/CoreAsyncTypes.h"
+#include "CoreTween.h"
+#include "CoreTweenBuilder.h"
+#include "CoreTweenEasing.h"
 #include "Components/Widget.h"
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
-#include "TimerManager.h"
-#include "Tools/WaitUntilNextFrameTaskRunner.h"
 #include "UI/AnimatableWidgetInterface.h"
 #include "UI/CoreWidget.h"
 #include "UI/UiCoreFrameworkTypes.h"
 #include "UnrealClient.h"
+#include "AsyncFlow.h"
+#include "AsyncFlowAwaiters.h"
 
 void UTweenManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -19,21 +21,11 @@ void UTweenManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void UTweenManagerSubsystem::Deinitialize()
 {
+	if (ActiveAnimationTask.IsValid() && !ActiveAnimationTask.IsCompleted())
+	{
+		ActiveAnimationTask.Cancel();
+	}
 	Super::Deinitialize();
-}
-
-bool UTweenManagerSubsystem::IsTickable() const
-{
-	return true;
-}
-
-TStatId UTweenManagerSubsystem::GetStatId() const
-{
-	RETURN_QUICK_DECLARE_CYCLE_STAT(UTweenManagerSubsystem, STATGROUP_Tickables);
-}
-
-void UTweenManagerSubsystem::Tick(float DeltaTime)
-{
 }
 
 void UTweenManagerSubsystem::PlayWidgetTransitionEffect(
@@ -43,37 +35,109 @@ void UTweenManagerSubsystem::PlayWidgetTransitionEffect(
 {
 	if (!Widget)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UWidgetAnimationSubsystem: Cannot play transition for null widget"));
 		return;
 	}
 
 	if (!ShouldPlayAnimations())
 	{
+		if (IAnimatableWidgetInterface* AnimatableWidget = Cast<IAnimatableWidgetInterface>(Widget))
+		{
+			AnimatableWidget->OnAnimationCompleted(TransitionMode);
+		}
 		return;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Playing transition effect for widget %s, type: %d, mode: %d"),
-		*Widget->GetName(), (int32)TransitionOptions.TransitionType, (int32)TransitionMode);
+	AsyncFlow::TTask<void> Task;
+	switch (TransitionOptions.TransitionType)
+	{
+		case EWidgetTransitionType::Scale:
+			Task = PlayScaleAnimationTask(Widget, TransitionOptions, TransitionMode);
+			break;
+		case EWidgetTransitionType::Translation:
+			Task = PlayTranslationAnimationTask(Widget, TransitionOptions, TransitionMode);
+			break;
+		case EWidgetTransitionType::Fade:
+			Task = PlayFadeAnimationTask(Widget, TransitionOptions, TransitionMode);
+			break;
+		default:
+			if (IAnimatableWidgetInterface* AnimatableWidget = Cast<IAnimatableWidgetInterface>(Widget))
+			{
+				AnimatableWidget->OnAnimationCompleted(TransitionMode);
+			}
+			return;
+	}
 
 	if (IAnimatableWidgetInterface* AnimatableWidget = Cast<IAnimatableWidgetInterface>(Widget))
 	{
 		AnimatableWidget->OnAnimationStarted(TransitionMode);
 	}
 
+	ActiveAnimationTask = MoveTemp(Task);
+	ActiveAnimationTask.SetDebugName(FString::Printf(TEXT("WidgetTransition_%s"), *Widget->GetName()));
+	ActiveAnimationTask.Start();
+}
+
+AsyncFlow::TTask<void> UTweenManagerSubsystem::PlayWidgetTransitionEffectTask(
+	UCoreWidget* Widget,
+	const FWidgetTweenTransitionOptions& TransitionOptions,
+	EWidgetTransitionMode TransitionMode)
+{
+	UCF_ASYNC_CONTRACT(this);
+
+	if (!Widget)
+	{
+		co_return;
+	}
+
+	if (!ShouldPlayAnimations())
+	{
+		if (IAnimatableWidgetInterface* AnimatableWidget = Cast<IAnimatableWidgetInterface>(Widget))
+		{
+			AnimatableWidget->OnAnimationCompleted(TransitionMode);
+		}
+		co_return;
+	}
+
 	switch (TransitionOptions.TransitionType)
 	{
 		case EWidgetTransitionType::Scale:
-			PlayScaleAnimation(Widget, TransitionOptions, TransitionMode);
+		{
+			if (IAnimatableWidgetInterface* AnimatableWidget = Cast<IAnimatableWidgetInterface>(Widget))
+			{
+				AnimatableWidget->OnAnimationStarted(TransitionMode);
+			}
+			co_await PlayScaleAnimationTask(Widget, TransitionOptions, TransitionMode);
 			break;
+		}
 		case EWidgetTransitionType::Translation:
-			PlayTranslationAnimation(Widget, TransitionOptions, TransitionMode);
+		{
+			if (IAnimatableWidgetInterface* AnimatableWidget = Cast<IAnimatableWidgetInterface>(Widget))
+			{
+				AnimatableWidget->OnAnimationStarted(TransitionMode);
+			}
+			co_await PlayTranslationAnimationTask(Widget, TransitionOptions, TransitionMode);
 			break;
+		}
 		case EWidgetTransitionType::Fade:
-			PlayFadeAnimation(Widget, TransitionOptions, TransitionMode);
+		{
+			if (IAnimatableWidgetInterface* AnimatableWidget = Cast<IAnimatableWidgetInterface>(Widget))
+			{
+				AnimatableWidget->OnAnimationStarted(TransitionMode);
+			}
+			co_await PlayFadeAnimationTask(Widget, TransitionOptions, TransitionMode);
 			break;
+		}
 		default:
+		{
+			if (IAnimatableWidgetInterface* AnimatableWidget = Cast<IAnimatableWidgetInterface>(Widget))
+			{
+				AnimatableWidget->OnAnimationCompleted(TransitionMode);
+			}
 			break;
+		}
 	}
+
+	co_return;
 }
 
 bool UTweenManagerSubsystem::PlayPresetAnimation(
@@ -83,13 +147,13 @@ bool UTweenManagerSubsystem::PlayPresetAnimation(
 {
 	if (!Widget)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UWidgetAnimationSubsystem: Cannot play preset for null widget"));
+		UE_LOG(LogTemp, Warning, TEXT("UTweenManagerSubsystem: Cannot play preset for null widget"));
 		return false;
 	}
 
 	if (!AnimationPresets.Contains(PresetName))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UWidgetAnimationSubsystem: Animation preset '%s' not found"), *PresetName.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("UTweenManagerSubsystem: Animation preset '%s' not found"), *PresetName.ToString());
 		return false;
 	}
 
@@ -107,17 +171,19 @@ bool UTweenManagerSubsystem::ShouldPlayAnimations() const
 	return true;
 }
 
-void UTweenManagerSubsystem::PlayScaleAnimation(
+AsyncFlow::TTask<void> UTweenManagerSubsystem::PlayScaleAnimationTask(
 	UCoreWidget*						 Widget,
 	const FWidgetTweenTransitionOptions& TransitionOptions,
 	EWidgetTransitionMode				 TransitionMode)
 {
+	UCF_ASYNC_CONTRACT(this);
+
 	const FVector2D Start = TransitionOptions.ScaleFrom;
 	const FVector2D End = TransitionOptions.ScaleTo;
 	const float		StartOpacity = TransitionOptions.FadeFrom;
 	const float		EndOpacity = TransitionOptions.FadeTo;
 
-	CreateAndPlayTween(Widget,
+	co_await CreateAndPlayTweenTask(Widget,
 		Start, End,
 		FVector2D::ZeroVector, FVector2D::ZeroVector,
 		StartOpacity, EndOpacity,
@@ -126,71 +192,60 @@ void UTweenManagerSubsystem::PlayScaleAnimation(
 		TransitionMode);
 }
 
-void UTweenManagerSubsystem::PlayTranslationAnimation(
+AsyncFlow::TTask<void> UTweenManagerSubsystem::PlayTranslationAnimationTask(
 	UCoreWidget*						 Widget,
 	const FWidgetTweenTransitionOptions& TransitionOptions,
 	EWidgetTransitionMode				 TransitionMode)
 {
-	// Ensure the widget's layout is up to date before calculating geometry.
+	UCF_ASYNC_CONTRACT(this);
+
 	Widget->ForceLayoutPrepass();
 
-	// Use weak pointers to safely reference the widget and subsystem inside the lambda.
-	TWeakObjectPtr<UCoreWidget>			   WeakWidget = Widget;
-	TWeakObjectPtr<UTweenManagerSubsystem> WeakThis = this;
+	co_await AsyncFlow::NextTick(this);
 
-	// Run the animation logic on the next frame to ensure geometry is valid.
-	UWaitUntilNextFrameTaskRunner* Runner = NewObject<UWaitUntilNextFrameTaskRunner>(this);
+	TWeakObjectPtr<UCoreWidget> WeakWidget = Widget;
+	if (!WeakWidget.IsValid())
+	{
+		co_return;
+	}
 
-	TFuture<void> Future = Runner->Run([WeakWidget, WeakThis, TransitionOptions, TransitionMode]() {
-		if (!WeakWidget.IsValid() || !WeakThis.IsValid())
+	FVector2D Start = FVector2D::ZeroVector;
+	FVector2D End = FVector2D::ZeroVector;
+
+	if (TransitionOptions.UseViewportAsTranslationOrigin)
+	{
+		GetViewportTranslationVectors(TransitionOptions.WidgetTranslationType, Start, End);
+		Start += TransitionOptions.TranslationFromOffset;
+		End += TransitionOptions.TranslationToOffset;
+
+		if (TransitionMode == EWidgetTransitionMode::Outtro)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Widget or subsystem no longer valid during translation animation"));
-			return;
+			Swap(Start, End);
 		}
+	}
+	else
+	{
+		Start = TransitionOptions.TranslationFrom + TransitionOptions.TranslationFromOffset;
+		End = TransitionOptions.TranslationTo + TransitionOptions.TranslationToOffset;
+	}
 
-		FVector2D Start = FVector2D::ZeroVector;
-		FVector2D End = FVector2D::ZeroVector;
-
-		// Determine translation vectors based on whether viewport origin is used.
-		if (TransitionOptions.UseViewportAsTranslationOrigin)
-		{
-			// Get updated viewport values and apply offsets.
-			GetViewportTranslationVectors(TransitionOptions.WidgetTranslationType, Start, End);
-			Start += TransitionOptions.TranslationFromOffset;
-			End += TransitionOptions.TranslationToOffset;
-
-			// Swap start and end for outro animations.
-			if (TransitionMode == EWidgetTransitionMode::Outtro)
-			{
-				Swap(Start, End);
-			}
-		}
-		else
-		{
-			Start = TransitionOptions.TranslationFrom + TransitionOptions.TranslationFromOffset;
-			End = TransitionOptions.TranslationTo + TransitionOptions.TranslationToOffset;
-		}
-
-		// Start the tween animation with the calculated parameters.
-		WeakThis->CreateAndPlayTween(WeakWidget.Get(),
-			FVector2D::UnitVector, FVector2D::UnitVector,
-			Start, End,
-			TransitionOptions.FadeFrom, TransitionOptions.FadeTo,
-			TransitionOptions.TransitionTime,
-			TransitionOptions.EasingType,
-			TransitionMode);
-	});
+	co_await CreateAndPlayTweenTask(WeakWidget.Get(),
+		FVector2D::UnitVector, FVector2D::UnitVector,
+		Start, End,
+		TransitionOptions.FadeFrom, TransitionOptions.FadeTo,
+		TransitionOptions.TransitionTime,
+		TransitionOptions.EasingType,
+		TransitionMode);
 }
 
-void UTweenManagerSubsystem::PlayFadeAnimation(
+AsyncFlow::TTask<void> UTweenManagerSubsystem::PlayFadeAnimationTask(
 	UCoreWidget*						 Widget,
 	const FWidgetTweenTransitionOptions& TransitionOptions,
 	EWidgetTransitionMode				 TransitionMode)
 {
-	UE_LOG(LogTemp, Log, TEXT("UWidgetAnimationSubsystem: Playing fade animation for widget %s with FadeFrom=%f, FadeTo=%f, Duration=%f"),
-		*Widget->GetName(), TransitionOptions.FadeFrom, TransitionOptions.FadeTo, TransitionOptions.TransitionTime);
+	UCF_ASYNC_CONTRACT(this);
 
-	CreateAndPlayTween(Widget,
+	co_await CreateAndPlayTweenTask(Widget,
 		FVector2D::UnitVector, FVector2D::UnitVector,
 		FVector2D::ZeroVector, FVector2D::ZeroVector,
 		TransitionOptions.FadeFrom, TransitionOptions.FadeTo,
@@ -232,39 +287,35 @@ void UTweenManagerSubsystem::GetViewportTranslationVectors(
 	}
 }
 
-void UTweenManagerSubsystem::CreateAndPlayTween(
+AsyncFlow::TTask<void> UTweenManagerSubsystem::CreateAndPlayTweenTask(
 	UCoreWidget*	 Widget,
 	const FVector2D& StartScale, const FVector2D& EndScale,
 	const FVector2D& StartTranslation, const FVector2D& EndTranslation,
-	float StartOpacity, float EndOpacity, float Duration,
-	EBUIEasingType EasingType, EWidgetTransitionMode TransitionMode)
+	const float StartOpacity, const float EndOpacity, const float Duration,
+	const ECoreTweenEasingType EasingType, const EWidgetTransitionMode TransitionMode)
 {
+	UCF_ASYNC_CONTRACT(this);
+
 	if (!Widget)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UWidgetAnimationSubsystem: Invalid widget for tween animation"));
-		return;
+		co_return;
 	}
 
-	FBUITweenInstance& Tween = UBUITween::Create(Widget, Duration)
-								   .FromScale(StartScale)
-								   .ToScale(EndScale)
-								   .FromTranslation(StartTranslation)
-								   .ToTranslation(EndTranslation)
-								   .FromOpacity(StartOpacity)
-								   .ToOpacity(EndOpacity)
-								   .Easing(EasingType)
-								   .OnComplete(FBUITweenSignature::CreateLambda(
-									   [TransitionMode](UWidget* InWidget) {
-										   if (!IsValid(InWidget))
-										   {
-											   UE_LOG(LogTemp, Error, TEXT("UWidgetAnimationSubsystem: Widget no longer valid in tween completion"));
-											   return;
-										   }
-										   if (IAnimatableWidgetInterface* AnimatableWidget = Cast<IAnimatableWidgetInterface>(InWidget))
-										   {
-											   AnimatableWidget->OnAnimationCompleted(TransitionMode);
-										   }
-									   }));
+	co_await UCoreTween::Create(Widget, Duration)
+		.FromScale(StartScale)
+		.ToScale(EndScale)
+		.FromTranslation(StartTranslation)
+		.ToTranslation(EndTranslation)
+		.FromOpacity(StartOpacity)
+		.ToOpacity(EndOpacity)
+		.Easing(EasingType)
+		.Run(this);
 
-	Tween.Begin();
+	if (IsValid(Widget))
+	{
+		if (IAnimatableWidgetInterface* AnimatableWidget = Cast<IAnimatableWidgetInterface>(Widget))
+		{
+			AnimatableWidget->OnAnimationCompleted(TransitionMode);
+		}
+	}
 }

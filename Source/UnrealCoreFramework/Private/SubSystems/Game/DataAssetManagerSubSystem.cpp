@@ -1,9 +1,11 @@
-﻿
-#include "SubSystems/Game/DataAssetManagerSubSystem.h"
+﻿#include "SubSystems/Game/DataAssetManagerSubSystem.h"
 
+#include "Async/CoreAsyncTypes.h"
 #include "Data/DamageTypeDataAsset.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
+#include "AsyncFlow.h"
+#include "AsyncFlowAssetAwaiters.h"
 
 DEFINE_LOG_CATEGORY(LogDataAssetManagerSubsystem);
 
@@ -13,25 +15,23 @@ void UDataAssetManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection
 
 	AssetManager = UAssetManager::GetIfInitialized();
 
-	UE_LOG(LogTemp, Log, TEXT("DataAssetManagerSubsystem: Initialized"));
+	UE_LOG(LogDataAssetManagerSubsystem, Log, TEXT("DataAssetManagerSubsystem: Initialized"));
 
 	TArray<UDataAsset*> DamageTypes = LoadAllDataAssetsOfType(UDamageTypeDataAsset::StaticClass());
 
-	UE_LOG(LogTemp, Log, TEXT("DataAssetManagerSubsystem: Initialized"));
+	UE_LOG(LogDataAssetManagerSubsystem, Log, TEXT("DataAssetManagerSubsystem: Loaded %d DamageType assets"), DamageTypes.Num());
 }
 
 void UDataAssetManagerSubsystem::Deinitialize()
 {
-	// Clean up async handles
-	for (auto& Handle : AsyncHandles)
+	for (TPair<FPrimaryAssetId, AsyncFlow::TTask<UDataAsset*>>& Pair : ActiveLoadTasks)
 	{
-		if (Handle.Value.IsValid())
+		if (Pair.Value.IsValid() && !Pair.Value.IsCompleted())
 		{
-			Handle.Value->CancelHandle();
+			Pair.Value.Cancel();
 		}
 	}
-
-	AsyncHandles.Empty();
+	ActiveLoadTasks.Empty();
 	LoadedAssets.Empty();
 
 	Super::Deinitialize();
@@ -45,17 +45,14 @@ UDataAsset* UDataAssetManagerSubsystem::LoadDataAssetByPrimaryAssetId(const FPri
 		return nullptr;
 	}
 
-	// Check cache first
 	if (UDataAsset* CachedAsset = nullptr; IsAssetCached(AssetId, CachedAsset))
 	{
 		if (IsValid(CachedAsset))
 		{
-			UE_LOG(LogDataAssetManagerSubsystem, Log, TEXT("DataAssetManagerSubsystem: Loaded asset from cache: %s "), *AssetId.ToString());
 			return CachedAsset;
 		}
 	}
 
-	// Get the asset path and load synchronously
 	FSoftObjectPath AssetPath = AssetManager->GetPrimaryAssetPath(AssetId);
 	if (!AssetPath.IsValid())
 	{
@@ -63,7 +60,6 @@ UDataAsset* UDataAssetManagerSubsystem::LoadDataAssetByPrimaryAssetId(const FPri
 		return nullptr;
 	}
 
-	// Load synchronously using StreamableManager
 	UObject* LoadedObject = AssetManager->GetStreamableManager().LoadSynchronous(AssetPath);
 	if (!IsValid(LoadedObject))
 	{
@@ -90,72 +86,90 @@ UDataAsset* UDataAssetManagerSubsystem::LoadDataAssetByClass(const TSubclassOf<U
 		return nullptr;
 	}
 
-	// Create asset ID from class and name
 	const FPrimaryAssetType AssetType = AssetClass->GetDefaultObject<UDataAsset>()->GetPrimaryAssetId().PrimaryAssetType;
 	const FPrimaryAssetId	AssetId(AssetType, FName(*AssetName));
 
 	return LoadDataAssetByPrimaryAssetId(AssetId);
 }
 
-void UDataAssetManagerSubsystem::LoadDataAssetAsync(FPrimaryAssetId AssetId, TFunction<void(UDataAsset*, bool)> OnLoaded)
+AsyncFlow::TTask<UDataAsset*> UDataAssetManagerSubsystem::LoadDataAssetAsyncTask(FPrimaryAssetId AssetId)
 {
+	UCF_ASYNC_CONTRACT(this);
+
 	if (!AssetId.IsValid())
 	{
-		if (OnLoaded)
-		{
-			OnLoaded(nullptr, false);
-		}
-		return;
+		UE_LOG(LogDataAssetManagerSubsystem, Warning, TEXT("LoadDataAssetAsyncTask: Invalid AssetId"));
+		OnDataAssetLoaded.Broadcast(nullptr, false);
+		co_return nullptr;
 	}
 
-	// Check cache first
+	// Return cached asset immediately
 	if (UDataAsset* CachedAsset = nullptr; IsAssetCached(AssetId, CachedAsset))
 	{
 		if (IsValid(CachedAsset))
 		{
-			if (OnLoaded)
-			{
-				OnLoaded(CachedAsset, true);
-			}
-			return;
+			OnDataAssetLoaded.Broadcast(CachedAsset, true);
+			co_return CachedAsset;
 		}
 	}
 
-	const TArray<FPrimaryAssetId>		AssetIds = { AssetId };
-	const TSharedPtr<FStreamableHandle> Handle = AssetManager->LoadPrimaryAssets(AssetIds, TArray<FName>(),
-		FStreamableDelegate::CreateLambda([this, AssetId, OnLoaded]() {
-			this->HandleAssetLoadedFunction(AssetId, OnLoaded);
-		}));
+	UObject* LoadedObject = co_await AsyncFlow::AsyncLoadPrimaryAsset(AssetId);
 
-	if (Handle.IsValid())
+	UDataAsset* DataAsset = Cast<UDataAsset>(LoadedObject);
+	if (IsValid(DataAsset))
 	{
-		AsyncHandles.Add(AssetId, Handle);
+		LoadedAssets.Add(AssetId, DataAsset);
+		OnDataAssetLoaded.Broadcast(DataAsset, true);
+		UE_LOG(LogDataAssetManagerSubsystem, Log, TEXT("Async loaded asset: %s"), *AssetId.ToString());
 	}
 	else
 	{
-		if (OnLoaded)
-		{
-			OnLoaded(nullptr, false);
-		}
+		OnDataAssetLoaded.Broadcast(nullptr, false);
+		UE_LOG(LogDataAssetManagerSubsystem, Warning, TEXT("Async load failed for asset: %s"), *AssetId.ToString());
 	}
+
+	co_return DataAsset;
 }
 
-void UDataAssetManagerSubsystem::LoadDataAssetByClassAsync(const TSubclassOf<UDataAsset>& AssetClass, const FString& AssetName, const TFunction<void(UDataAsset*, bool)>& OnLoaded)
+AsyncFlow::TTask<UDataAsset*> UDataAssetManagerSubsystem::LoadDataAssetByClassAsyncTask(
+	TSubclassOf<UDataAsset> AssetClass, const FString& AssetName)
 {
+	UCF_ASYNC_CONTRACT(this);
+
 	if (!AssetClass || AssetName.IsEmpty())
 	{
-		if (OnLoaded)
-		{
-			OnLoaded(nullptr, false);
-		}
-		return;
+		co_return nullptr;
 	}
 
-	// Create asset ID from class and name
 	const FPrimaryAssetType AssetType = AssetClass->GetDefaultObject<UDataAsset>()->GetPrimaryAssetId().PrimaryAssetType;
-	const FPrimaryAssetId	AssetId(AssetType, FName(*AssetName));
+	const FPrimaryAssetId AssetId(AssetType, FName(*AssetName));
 
-	LoadDataAssetAsync(AssetId, OnLoaded);
+	UDataAsset* Result = co_await LoadDataAssetAsyncTask(AssetId);
+	co_return Result;
+}
+
+AsyncFlow::TTask<TArray<UDataAsset*>> UDataAssetManagerSubsystem::LoadAllDataAssetsOfTypeAsyncTask(
+	TSubclassOf<UDataAsset> AssetClass)
+{
+	UCF_ASYNC_CONTRACT(this);
+
+	TArray<UDataAsset*> Results;
+	if (!AssetClass)
+	{
+		co_return Results;
+	}
+
+	TArray<FPrimaryAssetId> AssetIds = GetAllAssetIds(AssetClass);
+	for (const FPrimaryAssetId& AssetId : AssetIds)
+	{
+		UDataAsset* Loaded = co_await LoadDataAssetAsyncTask(AssetId);
+		if (IsValid(Loaded))
+		{
+			Results.Add(Loaded);
+		}
+	}
+
+	co_return Results;
 }
 
 TArray<UDataAsset*> UDataAssetManagerSubsystem::LoadAllDataAssetsOfType(const TSubclassOf<UDataAsset> AssetClass)
@@ -183,19 +197,6 @@ TArray<UDataAsset*> UDataAssetManagerSubsystem::LoadAllDataAssetsOfType(const TS
 	return AssetsToLoad;
 }
 
-void UDataAssetManagerSubsystem::LoadAllDataAssetsOfTypeAsync(const TSubclassOf<UDataAsset>& AssetClass, const TFunction<void(UDataAsset*, bool)>& OnEachLoaded)
-{
-	if (!AssetClass)
-	{
-		return;
-	}
-
-	for (TArray<FPrimaryAssetId> AssetIds = GetAllAssetIds(AssetClass); const FPrimaryAssetId& AssetId : AssetIds)
-	{
-		LoadDataAssetAsync(AssetId, OnEachLoaded);
-	}
-}
-
 TArray<FPrimaryAssetId> UDataAssetManagerSubsystem::GetAllAssetIds(const TSubclassOf<UDataAsset> AssetClass) const
 {
 	TArray<FPrimaryAssetId> AssetIds;
@@ -219,7 +220,6 @@ void UDataAssetManagerSubsystem::PreloadAssets(const TArray<FPrimaryAssetId>& As
 {
 	AssetManager->LoadPrimaryAssets(AssetIds);
 
-	// Cache loaded assets
 	for (const FPrimaryAssetId& AssetId : AssetIds)
 	{
 		if (UObject* LoadedObject = AssetManager->GetPrimaryAssetObject(AssetId))
@@ -236,14 +236,13 @@ void UDataAssetManagerSubsystem::UnloadAsset(const FPrimaryAssetId AssetId)
 {
 	LoadedAssets.Remove(AssetId);
 
-	// Cancel any pending async load
-	if (const TSharedPtr<FStreamableHandle>* Handle = AsyncHandles.Find(AssetId))
+	if (AsyncFlow::TTask<UDataAsset*>* Task = ActiveLoadTasks.Find(AssetId))
 	{
-		if (Handle->IsValid())
+		if (Task->IsValid() && !Task->IsCompleted())
 		{
-			(*Handle)->CancelHandle();
+			Task->Cancel();
 		}
-		AsyncHandles.Remove(AssetId);
+		ActiveLoadTasks.Remove(AssetId);
 	}
 
 	UAssetManager::Get().UnloadPrimaryAsset(AssetId);
@@ -253,40 +252,14 @@ void UDataAssetManagerSubsystem::ClearCache()
 {
 	LoadedAssets.Empty();
 
-	for (auto& Handle : AsyncHandles)
+	for (TPair<FPrimaryAssetId, AsyncFlow::TTask<UDataAsset*>>& Pair : ActiveLoadTasks)
 	{
-		if (Handle.Value.IsValid())
+		if (Pair.Value.IsValid() && !Pair.Value.IsCompleted())
 		{
-			Handle.Value->CancelHandle();
+			Pair.Value.Cancel();
 		}
 	}
-	AsyncHandles.Empty();
-}
-
-void UDataAssetManagerSubsystem::HandleAssetLoadedFunction(const FPrimaryAssetId& AssetId, const TFunction<void(UDataAsset*, bool)>& OnLoaded)
-{
-	// Remove from async handles
-	AsyncHandles.Remove(AssetId);
-
-	// Get the loaded asset
-	UObject* Asset = AssetManager->GetPrimaryAssetObject(AssetId);
-	if (UDataAsset* DataAsset = Cast<UDataAsset>(Asset))
-	{
-		LoadedAssets.Add(AssetId, DataAsset);
-		if (OnLoaded)
-		{
-			OnLoaded(DataAsset, true);
-		}
-		OnDataAssetLoaded.Broadcast(DataAsset, true);
-	}
-	else
-	{
-		if (OnLoaded)
-		{
-			OnLoaded(nullptr, false);
-		}
-		OnDataAssetLoaded.Broadcast(nullptr, false);
-	}
+	ActiveLoadTasks.Empty();
 }
 
 bool UDataAssetManagerSubsystem::IsAssetCached(const FPrimaryAssetId& AssetId, UDataAsset*& OutCachedDataAsset) const
@@ -295,8 +268,7 @@ bool UDataAssetManagerSubsystem::IsAssetCached(const FPrimaryAssetId& AssetId, U
 	{
 		if (IsValid(CachedAsset->Get()))
 		{
-			UE_LOG(LogDataAssetManagerSubsystem, Log, TEXT("DataAssetManagerSubsystem: Loaded asset from cache: %s "), *AssetId.ToString());
-
+			UE_LOG(LogDataAssetManagerSubsystem, Log, TEXT("DataAssetManagerSubsystem: Loaded asset from cache: %s"), *AssetId.ToString());
 			OutCachedDataAsset = CachedAsset->Get();
 			return true;
 		}

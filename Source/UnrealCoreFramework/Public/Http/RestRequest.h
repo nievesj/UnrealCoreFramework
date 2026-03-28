@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Interfaces/IHttpRequest.h"
+#include "AsyncFlowTask.h"
 
 #include "RestRequest.generated.h"
 
@@ -14,7 +15,11 @@ enum class EHttpRequestType : uint8
 	POST
 };
 
+/** Delegate name kept for backward compatibility with existing Blueprint bindings */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FHttpResponseRecieved, int32, RequestIndex, int32, ResponseCode, const FString&, Message);
+
+/** Corrected spelling alias — use this in new code */
+using FHttpResponseReceived = FHttpResponseRecieved;
 
 UCLASS()
 class UNREALCOREFRAMEWORK_API URestRequest : public UObject
@@ -22,34 +27,29 @@ class UNREALCOREFRAMEWORK_API URestRequest : public UObject
 	GENERATED_BODY()
 
 public:
+	/**
+	 * Send an HTTP request (Blueprint entry point, fire-and-forget).
+	 * Fires HTTPResponseRecievedDelegate on completion.
+	 */
 	UFUNCTION(BlueprintCallable, Category = "Rest Request")
-	void Request(EHttpRequestType RequestType, FString Uri, FString JsonData = "");
+	void Request(EHttpRequestType RequestType, FString Uri, FString JsonData = TEXT(""));
 
-private:
-	TSharedRef<IHttpRequest> CreateRequest(EHttpRequestType RequestType, FString Uri, FString JsonData = "");
+	/**
+	 * Send an HTTP request and co_await the response.
+	 * @param RequestType GET, PUT, or POST
+	 * @param Uri Target URL
+	 * @param JsonData Optional JSON body for PUT/POST
+	 * @return TTask resolving to the HTTP response pointer (nullptr on failure)
+	 */
+	AsyncFlow::TTask<FHttpResponsePtr> RequestTask(EHttpRequestType RequestType, const FString& Uri, const FString& JsonData = TEXT(""));
 
-	UFUNCTION(BlueprintCallable, Category = Http)
-	void SendHttpRequest(const FString& Url, const FString& RequestContent);
-
-	/*Called when the server has responded to our http request*/
-	void OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
-
-	int32 SendHTTPRequest(const FString& InURL, const FString& InVerb, const FString& InMessage, const TMap<FString, FString>& InHeaders);
-	void  OnHttpRequestCompletedImpl(FHttpRequestPtr InRequest, FHttpResponsePtr InResponse, bool bWasSuccessful);
-
-	UPROPERTY(BlueprintAssignable, Category = "Movie Render Pipeline")
+	/** Blueprint-bindable delegate fired when a response arrives */
+	UPROPERTY(BlueprintAssignable, Category = "Rest Request")
 	FHttpResponseRecieved HTTPResponseRecievedDelegate;
 
-	struct FOutstandingRequest
-	{
-		FOutstandingRequest()
-			: RequestIndex(-1), Request(nullptr)
-		{
-		}
+private:
+	TSharedRef<IHttpRequest> CreateRequest(EHttpRequestType RequestType, const FString& Uri, const FString& JsonData = TEXT(""));
 
-		int32			RequestIndex;
-		FHttpRequestPtr Request;
-	};
-
-	TArray<FOutstandingRequest> OutstandingRequests;
+	/** Active request task for cancellation/ownership */
+	AsyncFlow::TTask<FHttpResponsePtr> ActiveRequestTask;
 };
