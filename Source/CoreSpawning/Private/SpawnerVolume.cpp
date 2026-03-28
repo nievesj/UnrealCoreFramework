@@ -21,8 +21,9 @@ FTransform ASpawnerVolume::GetSpawnTransform_Implementation()
 	const FVector Origin = SpawnVolume->GetComponentLocation();
 	const FVector Extent = SpawnVolume->GetScaledBoxExtent();
 
-	const FVector RandomPoint = FMath::RandPointInBox(FBox(Origin - Extent, Origin + Extent));
+	const FVector LocalPoint = FMath::RandPointInBox(FBox(-Extent, Extent));
+	const FVector WorldPoint = SpawnVolume->GetComponentTransform().TransformPosition(LocalPoint);
 
-	return FTransform(GetActorRotation(), RandomPoint, FVector::OneVector);
+	return FTransform(GetActorRotation(), WorldPoint, FVector::OneVector);
 }
 

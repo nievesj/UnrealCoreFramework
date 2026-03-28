@@ -35,8 +35,13 @@ void ACoreGameState::PostInitializeComponents()
 
 void ACoreGameState::ReceivedGameModeClass()
 {
-	// Tell each PlayerController that the Game class is here
-	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+	const UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	for (FConstPlayerControllerIterator Iterator = World->GetPlayerControllerIterator(); Iterator; ++Iterator)
 	{
 		APlayerController* const PlayerController = Iterator->Get();
 		if (PlayerController)

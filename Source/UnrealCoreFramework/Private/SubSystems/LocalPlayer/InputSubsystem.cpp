@@ -4,7 +4,8 @@
 
 void UInputSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Initializing Input Subsystem"))
+	Super::Initialize(Collection);
+	UE_LOG(LogTemp, Log, TEXT("Initializing Input Subsystem"));
 }
 
 void UInputSubsystem::Deinitialize()

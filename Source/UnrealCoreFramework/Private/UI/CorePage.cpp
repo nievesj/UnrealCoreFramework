@@ -9,7 +9,9 @@ void UCorePage::NativeConstruct()
 
 	const UWorld* World = GetWorld();
 	if (!IsValid(World))
+	{
 		return;
+	}
 
 	if (const APlayerController* PC = World->GetFirstPlayerController())
 	{
@@ -22,15 +24,15 @@ void UCorePage::NativeConstruct()
 
 void UCorePage::NativeDestruct()
 {
+	DisablePlayerInput = false;
 	Super::NativeDestruct();
-	DisablePlayerControllerInput = false;
 }
 
 void UCorePage::InternalShown()
 {
 	if (ExitButton)
 	{
-		ExitButton->OnClicked.AddDynamic(this, &UCorePage::Handle_OnExitButtonClicked);
+		ExitButton->OnClicked.AddUniqueDynamic(this, &UCorePage::Handle_OnExitButtonClicked);
 	}
 	Super::InternalShown();
 }
@@ -48,7 +50,7 @@ void UCorePage::NativeOnActivated()
 void UCorePage::NativeOnDeactivated()
 {
 	Super::NativeOnDeactivated();
-	DisablePlayerControllerInput = false;
+	DisablePlayerInput = false;
 }
 
 void UCorePage::Handle_OnExitButtonClicked()
@@ -63,7 +65,7 @@ void UCorePage::Handle_OnExitButtonClicked()
 void UCorePage::Open()
 {
 	IPageableWidgetInterface::Open();
-	DisablePlayerControllerInput = DisablePlayerInput;
+	DisablePlayerInput = true;
 	Show();
 }
 

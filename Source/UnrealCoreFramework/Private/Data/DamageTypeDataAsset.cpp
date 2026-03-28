@@ -19,6 +19,6 @@ void UDamageTypeDataAsset::PostLoad()
 	// Set default damage type if none specified
 	if (!CoreDamageTypeClass)
 	{
-		CoreDamageTypeClass = UDamageType::StaticClass();
+		CoreDamageTypeClass = UCoreDamageType::StaticClass();
 	}
 }

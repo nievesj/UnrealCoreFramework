@@ -4,7 +4,8 @@
 
 void UAudioSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Initializing Audio Subsystem"))
+	Super::Initialize(Collection);
+	UE_LOG(LogTemp, Log, TEXT("Initializing Audio Subsystem"));
 }
 
 void UAudioSubsystem::Deinitialize()

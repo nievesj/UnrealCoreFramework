@@ -6,8 +6,6 @@
 
 #include "TweenManagerSubsystem.generated.h"
 
-enum class EWidgetTranslationType : uint8;
-enum class ECoreTweenEasingType : uint8;
 class UCoreWidget;
 class UWidget;
 

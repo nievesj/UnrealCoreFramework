@@ -31,7 +31,7 @@ UCoreViewModel* UViewModelManagerSubsystem::GetOrCreateViewModel(const TSubclass
 	if (IsValid(NewViewModel))
 	{
 		NewViewModel->SetSource(TrackedObject);
-		ViewModels.Add(TrackedObject->GetUniqueID());
+		ViewModels.Add(TrackedObject->GetUniqueID(), NewViewModel);
 		UE_LOG(LogViewModelManagerSubsystem, Log, TEXT("Created ViewModel of class: %s"), *ViewModelClass->GetName());
 		return NewViewModel;
 	}

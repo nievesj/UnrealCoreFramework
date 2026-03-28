@@ -24,22 +24,25 @@ enum class EWidgetContainerType : uint8
 };
 
 UENUM(BlueprintType)
-enum class EWidgetTransitionType : uint8
+enum class ECoreModalResult : uint8
 {
-	NotUsed,
-	Scale,
-	Translation,
-	Fade
+	/** User pressed the confirm button (OK / Yes) */
+	Confirmed,
+	/** User pressed the cancel button (Cancel / No) */
+	Cancelled,
+	/** Modal was dismissed without an explicit choice (close button, escape, etc.) */
+	Dismissed
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnModalResultDelegate, ECoreModalResult, Result);
+
 UENUM(BlueprintType)
-enum class EWidgetTranslationType : uint8
+enum class EWidgetAnimationType : uint8
 {
 	None,
-	FromLeft,
-	FromRight,
-	FromTop,
-	FromBottom,
+	CommonUiDefault,
+	WidgetTween,
+	WidgetAnimation,
 };
 
 UENUM(BlueprintType)
@@ -50,12 +53,20 @@ enum class EWidgetTransitionMode : uint8
 };
 
 UENUM(BlueprintType)
-enum class EWidgetAnimationType : uint8
+enum class EWidgetTransitionType : uint8
 {
-	None,
-	CommonUiDefault,
-	WidgetTween,
-	WidgetAnimation,
+	Fade,
+	Scale,
+	Translation,
+};
+
+UENUM(BlueprintType)
+enum class EWidgetTranslationType : uint8
+{
+	FromLeft,
+	FromRight,
+	FromTop,
+	FromBottom,
 };
 
 USTRUCT(BlueprintType)
@@ -155,16 +166,4 @@ struct FCoreWidgetAnimationSettings
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CoreWidget, meta = (EditCondition = "WidgetAnimationType == EWidgetAnimationType::WidgetTween"))
 	FWidgetTweenTransitionOptions TweenExitOptions;
-
-	// UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite, Category = CoreWidget, meta = (BindWidgetAnimOptional, EditCondition = "WidgetAnimationType == EWidgetAnimationType::WidgetAnimation"))
-	// UWidgetAnimation* WidgetAnimationIntro;
-
-	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CoreWidget, meta = (BindWidgetAnimOptional, EditCondition = "WidgetAnimationType == EWidgetAnimationType::WidgetAnimation"))
-	// FWidgetAnimationOptions WidgetAnimationOptionsIntro;
-
-	// UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite, Category = CoreWidget, meta = (BindWidgetAnimOptional, EditCondition = "WidgetAnimationType == EWidgetAnimationType::WidgetAnimation"))
-	// UWidgetAnimation* WidgetAnimationOuttro;
-
-	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CoreWidget, meta = (BindWidgetAnimOptional, EditCondition = "WidgetAnimationType == EWidgetAnimationType::WidgetAnimation"))
-	// FWidgetAnimationOptions WidgetAnimationOptionsOuttro;
 };

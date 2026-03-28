@@ -17,7 +17,10 @@ void ASpawner::BeginPlay()
 {
 	Super::BeginPlay();
 
-	PoolSubsystem = GetWorld()->GetSubsystem<UObjectPoolSubsystem>();
+	if (const UWorld* World = GetWorld())
+	{
+		PoolSubsystem = World->GetSubsystem<UObjectPoolSubsystem>();
+	}
 
 	if (SpawnerConfig)
 	{
@@ -100,5 +103,45 @@ FTransform ASpawner::GetSpawnTransform_Implementation()
 void ASpawner::OnSpawnedActorDestroyed(AActor* DestroyedActor)
 {
 	SpawnedActors.Remove(DestroyedActor);
+}
+
+void ASpawner::ReleaseOne(AActor* Actor)
+{
+	if (!Actor || !SpawnedActors.Contains(Actor))
+	{
+		return;
+	}
+
+	Actor->OnDestroyed.RemoveAll(this);
+	SpawnedActors.Remove(Actor);
+
+	if (SpawnerConfig)
+	{
+		USpawnerFactory::ReleaseFromConfig(PoolSubsystem, SpawnerConfig, Actor);
+	}
+	else
+	{
+		Actor->Destroy();
+	}
+}
+
+void ASpawner::ReleaseAll()
+{
+	TArray<TObjectPtr<AActor>> ToRelease = MoveTemp(SpawnedActors);
+	for (const TObjectPtr<AActor>& Actor : ToRelease)
+	{
+		if (IsValid(Actor))
+		{
+			Actor->OnDestroyed.RemoveAll(this);
+			if (SpawnerConfig)
+			{
+				USpawnerFactory::ReleaseFromConfig(PoolSubsystem, SpawnerConfig, Actor);
+			}
+			else
+			{
+				Actor->Destroy();
+			}
+		}
+	}
 }
 

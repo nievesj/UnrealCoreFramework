@@ -56,7 +56,7 @@ public:
 	bool IsDead() const;
 
 	/** Restores health by the specified amount, returns true if healing was applied. */
-	UFUNCTION(BlueprintPure, Category = "Health")
+	UFUNCTION(BlueprintCallable, Category = "Health")
 	bool Heal(float HealAmount);
 
 	/** Returns the maximum health value. */
