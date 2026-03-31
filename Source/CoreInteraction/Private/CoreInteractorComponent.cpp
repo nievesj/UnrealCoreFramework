@@ -1,4 +1,26 @@
-﻿#include "CoreInteractorComponent.h"
+﻿// MIT License
+//
+// Copyright (c) 2026 José M. Nieves
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#include "CoreInteractorComponent.h"
 
 #include "IInteractable.h"
 #include "CoreInteractionComponent.h"
@@ -11,11 +33,6 @@ UCoreInteractorComponent::UCoreInteractorComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.TickInterval = 0.1f;
-}
-
-void UCoreInteractorComponent::BeginPlay()
-{
-	Super::BeginPlay();
 }
 
 void UCoreInteractorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -50,6 +67,7 @@ void UCoreInteractorComponent::ScanForInteractables()
 		Sphere);
 
 	AActor* ClosestActor = nullptr;
+	UCoreInteractionComponent* ClosestInteractionComp = nullptr;
 	float ClosestDistance = MAX_FLT;
 
 	for (const FOverlapResult& Overlap : Overlaps)
@@ -60,12 +78,12 @@ void UCoreInteractorComponent::ScanForInteractables()
 			continue;
 		}
 
-		if (!OtherActor->FindComponentByClass<UCoreInteractionComponent>())
+		UCoreInteractionComponent* InteractionComp = OtherActor->FindComponentByClass<UCoreInteractionComponent>();
+		if (!InteractionComp)
 		{
 			continue;
 		}
 
-		UCoreInteractionComponent* InteractionComp = OtherActor->FindComponentByClass<UCoreInteractionComponent>();
 		if (!IInteractable::Execute_CanInteract(InteractionComp, const_cast<AActor*>(Owner)))
 		{
 			continue;
@@ -76,6 +94,7 @@ void UCoreInteractorComponent::ScanForInteractables()
 		{
 			ClosestDistance = Distance;
 			ClosestActor = OtherActor;
+			ClosestInteractionComp = InteractionComp;
 		}
 	}
 
@@ -87,6 +106,7 @@ void UCoreInteractorComponent::ScanForInteractables()
 		}
 
 		FocusedActor = ClosestActor;
+		FocusedInteractionComp = ClosestInteractionComp;
 
 		if (FocusedActor)
 		{
@@ -97,23 +117,17 @@ void UCoreInteractorComponent::ScanForInteractables()
 
 void UCoreInteractorComponent::TryInteract()
 {
-	if (!FocusedActor)
+	if (!FocusedActor || !FocusedInteractionComp)
 	{
 		return;
 	}
 
-	UCoreInteractionComponent* InteractionComp = FocusedActor->FindComponentByClass<UCoreInteractionComponent>();
-	if (!InteractionComp)
+	if (!IInteractable::Execute_CanInteract(FocusedInteractionComp, GetOwner()))
 	{
 		return;
 	}
 
-	if (!IInteractable::Execute_CanInteract(InteractionComp, GetOwner()))
-	{
-		return;
-	}
-
-	IInteractable::Execute_Interact(InteractionComp, GetOwner());
+	IInteractable::Execute_Interact(FocusedInteractionComp, GetOwner());
 	OnInteracted.Broadcast(FocusedActor);
 }
 

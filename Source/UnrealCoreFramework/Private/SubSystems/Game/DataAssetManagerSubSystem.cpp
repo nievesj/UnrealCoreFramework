@@ -1,4 +1,26 @@
-﻿#include "SubSystems/Game/DataAssetManagerSubSystem.h"
+﻿// MIT License
+//
+// Copyright (c) 2026 José M. Nieves
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#include "SubSystems/Game/DataAssetManagerSubSystem.h"
 
 #include "Async/CoreAsyncTypes.h"
 #include "Data/DamageTypeDataAsset.h"
@@ -219,21 +241,24 @@ TArray<FPrimaryAssetId> UDataAssetManagerSubsystem::GetAllAssetIds(const TSubcla
 
 bool UDataAssetManagerSubsystem::IsAssetLoaded(const FPrimaryAssetId& AssetId) const
 {
-	return LoadedAssets.Contains(AssetId) && IsValid(LoadedAssets[AssetId]);
+	return LoadedAssets.Contains(AssetId);
 }
 
 void UDataAssetManagerSubsystem::PreloadAssets(const TArray<FPrimaryAssetId>& AssetIds)
 {
 	if (!IsValid(AssetManager))
 	{
-		UE_LOG(LogDataAssetManagerSubsystem, Warning, TEXT("DataAssetManagerSubsystem: AssetManager is not initialized"));
+		UE_LOG(LogDataAssetManagerSubsystem, Warning, TEXT("PreloadAssets: AssetManager is not initialized"));
 		return;
 	}
 
-	AssetManager->LoadPrimaryAssets(AssetIds);
-
 	for (const FPrimaryAssetId& AssetId : AssetIds)
 	{
+		if (LoadedAssets.Contains(AssetId))
+		{
+			continue;
+		}
+
 		if (UObject* LoadedObject = AssetManager->GetPrimaryAssetObject(AssetId))
 		{
 			if (UDataAsset* DataAsset = Cast<UDataAsset>(LoadedObject))
@@ -242,6 +267,8 @@ void UDataAssetManagerSubsystem::PreloadAssets(const TArray<FPrimaryAssetId>& As
 			}
 		}
 	}
+
+	UE_LOG(LogDataAssetManagerSubsystem, Log, TEXT("PreloadAssets: Completed preloading %d assets"), AssetIds.Num());
 }
 
 void UDataAssetManagerSubsystem::UnloadAsset(const FPrimaryAssetId AssetId)
