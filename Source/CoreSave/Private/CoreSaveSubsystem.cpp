@@ -1,8 +1,31 @@
-﻿// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// MIT License
+//
+// Copyright (c) 2026 José M. Nieves
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include "CoreSaveSubsystem.h"
 #include "CoreSaveGame.h"
 #include "Kismet/GameplayStatics.h"
+#include "Async/CoreAsyncTypes.h"
+#include "AsyncFlow.h"
+#include "AsyncFlowAwaiters.h"
 
 DEFINE_LOG_CATEGORY(LogCoreSave);
 
@@ -41,13 +64,14 @@ void UCoreFrameworkSaveGame::RemoveKey(const FString& Key)
 
 void UCoreFrameworkSaveGame::SetSerializedData(const FString& Key, const TArray<uint8>& Data)
 {
-	BinaryData.Add(Key, Data);
+	FCoreSaveByteArray& Entry = BinaryData.FindOrAdd(Key);
+	Entry.Data = Data;
 }
 
 TArray<uint8> UCoreFrameworkSaveGame::GetSerializedData(const FString& Key) const
 {
-	const TArray<uint8>* Found = BinaryData.Find(Key);
-	return Found ? *Found : TArray<uint8>();
+	const FCoreSaveByteArray* Found = BinaryData.Find(Key);
+	return Found ? Found->Data : TArray<uint8>();
 }
 
 // ---------------------------------------------------------------------------
@@ -205,4 +229,90 @@ UCoreFrameworkSaveGame* UCoreSaveSubsystem::GetOrCreateSaveGame(const FString& S
 TArray<FString> UCoreSaveSubsystem::GetAllSaveSlotNames() const
 {
 	return KnownSlotNames;
+}
+
+AsyncFlow::TTask<bool> UCoreSaveSubsystem::SaveGameAsync(const FString& SlotName, int32 UserIndex)
+{
+	UCF_ASYNC_CONTRACT(this);
+
+	if (!CurrentSaveGame)
+	{
+		UE_LOG(LogCoreSave, Warning, TEXT("SaveGameAsync: No active save game for slot '%s'."), *SlotName);
+		OnSaveCompleted.Broadcast(SlotName, false);
+		co_return false;
+	}
+
+	CurrentSaveGame->SaveSlotName = SlotName;
+	CurrentSaveGame->UserIndex = UserIndex;
+	CurrentSaveGame->SaveTimestamp = FDateTime::UtcNow();
+
+	FAsyncSaveGameToSlotDelegate OnComplete;
+	bool bAsyncResult = false;
+
+	OnComplete.BindWeakLambda(this, [this, SlotName, &bAsyncResult](const FString& InSlotName, const int32 InUserIndex, bool bSuccess)
+	{
+		bAsyncResult = bSuccess;
+		if (bSuccess)
+		{
+			if (!KnownSlotNames.Contains(InSlotName))
+			{
+				KnownSlotNames.Add(InSlotName);
+			}
+			UE_LOG(LogCoreSave, Log, TEXT("SaveGameAsync: Saved slot '%s'."), *InSlotName);
+		}
+		else
+		{
+			UE_LOG(LogCoreSave, Error, TEXT("SaveGameAsync: Failed to save slot '%s'."), *InSlotName);
+		}
+		OnSaveCompleted.Broadcast(InSlotName, bSuccess);
+	});
+
+	UGameplayStatics::AsyncSaveGameToSlot(CurrentSaveGame, SlotName, UserIndex, OnComplete);
+
+	// Yield one frame so the async callback fires
+	co_await AsyncFlow::NextTick(this);
+
+	co_return bAsyncResult;
+}
+
+AsyncFlow::TTask<bool> UCoreSaveSubsystem::LoadGameAsync(const FString& SlotName, int32 UserIndex)
+{
+	UCF_ASYNC_CONTRACT(this);
+
+	if (!UGameplayStatics::DoesSaveGameExist(SlotName, UserIndex))
+	{
+		UE_LOG(LogCoreSave, Warning, TEXT("LoadGameAsync: Slot '%s' does not exist."), *SlotName);
+		OnLoadCompleted.Broadcast(SlotName, false);
+		co_return false;
+	}
+
+	bool bAsyncResult = false;
+
+	FAsyncLoadGameFromSlotDelegate OnComplete;
+	OnComplete.BindWeakLambda(this, [this, SlotName, &bAsyncResult](const FString& InSlotName, const int32 InUserIndex, USaveGame* LoadedGame)
+	{
+		UCoreFrameworkSaveGame* TypedSave = Cast<UCoreFrameworkSaveGame>(LoadedGame);
+		if (TypedSave)
+		{
+			CurrentSaveGame = TypedSave;
+			if (!KnownSlotNames.Contains(InSlotName))
+			{
+				KnownSlotNames.Add(InSlotName);
+			}
+			UE_LOG(LogCoreSave, Log, TEXT("LoadGameAsync: Loaded slot '%s'."), *InSlotName);
+			bAsyncResult = true;
+		}
+		else
+		{
+			UE_LOG(LogCoreSave, Error, TEXT("LoadGameAsync: Failed to load slot '%s'."), *InSlotName);
+			bAsyncResult = false;
+		}
+		OnLoadCompleted.Broadcast(InSlotName, bAsyncResult);
+	});
+
+	UGameplayStatics::AsyncLoadGameFromSlot(SlotName, UserIndex, OnComplete);
+
+	co_await AsyncFlow::NextTick(this);
+
+	co_return bAsyncResult;
 }

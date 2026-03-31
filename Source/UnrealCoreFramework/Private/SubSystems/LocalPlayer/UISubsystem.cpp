@@ -1,4 +1,26 @@
-﻿#include "SubSystems/LocalPlayer/UISubsystem.h"
+﻿// MIT License
+//
+// Copyright (c) 2026 José M. Nieves
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#include "SubSystems/LocalPlayer/UISubsystem.h"
 
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/Character.h"
@@ -94,7 +116,7 @@ UCoreWidget* UUISubsystem::AddWidgetToStack(const TSubclassOf<UCoreWidget>& Page
 	return Widget;
 }
 
-void UUISubsystem::RemoveWidgetFromStack(UCoreWidget& Widget, const EWidgetContainerType& StackContainerType, bool Destroy)
+void UUISubsystem::RemoveWidgetFromStack(UCoreWidget* Widget, const EWidgetContainerType& StackContainerType, bool Destroy)
 {
 	if (!MainUiContainer)
 	{
@@ -102,7 +124,18 @@ void UUISubsystem::RemoveWidgetFromStack(UCoreWidget& Widget, const EWidgetConta
 		return;
 	}
 
+	if (!Widget)
+	{
+		UE_VLOG_UELOG(this, LogUISubsystem, Warning, TEXT("UUISubsystem::RemoveWidgetFromStack - Widget is invalid"));
+		return;
+	}
+
 	MainUiContainer->RemoveWidgetFromStack(Widget, StackContainerType);
+
+	if (Destroy)
+	{
+		Widget->RemoveFromParent();
+	}
 }
 
 IPageableWidgetInterface* UUISubsystem::GetTopPage()
@@ -168,7 +201,7 @@ bool UUISubsystem::ShouldDisablePlayerControllerInput()
 	return false;
 }
 
-void UUISubsystem::SetPlayerControllerInput(APlayerController* PC, bool IsDisabled)
+void UUISubsystem::SetPlayerControllerInput(APlayerController* PC, bool bIsDisabled)
 {
 	if (!PC)
 	{
@@ -183,7 +216,7 @@ void UUISubsystem::SetPlayerControllerInput(APlayerController* PC, bool IsDisabl
 		return;
 	}
 
-	IsDisabled ? Character->DisableInput(PC) : Character->EnableInput(PC);
+	bIsDisabled ? Character->DisableInput(PC) : Character->EnableInput(PC);
 }
 
 void UUISubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -194,7 +227,13 @@ void UUISubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void UUISubsystem::Deinitialize()
 {
-	UE_LOG(LogUISubsystem, Warning, TEXT("Deinitializing UI Subsystem"))
+	UE_LOG(LogUISubsystem, Warning, TEXT("Deinitializing UI Subsystem"));
+
+	CoreWidgetsOpen.Empty();
+	PageHistory.Empty();
+	MainUiContainer = nullptr;
+
+	Super::Deinitialize();
 }
 
 void UUISubsystem::GoBack()
@@ -212,4 +251,3 @@ void UUISubsystem::GoBack()
 		AddWidgetToStack(PreviousPageClass, EWidgetContainerType::Page);
 	}
 }
-

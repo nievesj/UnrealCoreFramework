@@ -1,4 +1,26 @@
-﻿#include "Targets/WidgetTweenTarget.h"
+// MIT License
+//
+// Copyright (c) 2026 Jos� M. Nieves
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#include "Targets/WidgetTweenTarget.h"
 
 #include "Blueprint/UserWidget.h"
 #include "Components/Border.h"
@@ -9,6 +31,8 @@
 #include "Components/SizeBox.h"
 #include "Components/VerticalBoxSlot.h"
 #include "Components/Widget.h"
+
+DEFINE_LOG_CATEGORY(LogCoreTweenTarget);
 
 FWidgetTweenTarget::FWidgetTweenTarget(UWidget* InWidget)
 	: WeakWidget(InWidget)
@@ -25,7 +49,7 @@ UWidget* FWidgetTweenTarget::GetWidget() const
 	return WeakWidget.Get();
 }
 
-// ── Read current values ─────────────────────────────────────────────
+// -- Read current values ---------------------------------------------
 
 FVector2D FWidgetTweenTarget::GetCurrentTranslation() const
 {
@@ -127,20 +151,20 @@ float FWidgetTweenTarget::GetCurrentMaxDesiredHeight() const
 	return SizeBox ? SizeBox->GetMaxDesiredHeight() : 0.0f;
 }
 
-// ── Apply interpolated values ───────────────────────────────────────
+// -- Apply interpolated values ---------------------------------------
 
 void FWidgetTweenTarget::ApplyTranslation(const FVector2D& Value)
 {
 	UWidget* W = WeakWidget.Get();
 	if (!W)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[TweenTarget] ApplyTranslation — widget is null"));
+		UE_LOG(LogCoreTweenTarget, Warning, TEXT("[TweenTarget] ApplyTranslation � widget is null"));
 		return;
 	}
 	FWidgetTransform Transform = W->GetRenderTransform();
 	Transform.Translation = Value;
 	W->SetRenderTransform(Transform);
-	UE_LOG(LogTemp, Verbose, TEXT("[TweenTarget] ApplyTranslation(%f, %f) on %s"), Value.X, Value.Y, *W->GetName());
+	UE_LOG(LogCoreTweenTarget, Verbose, TEXT("[TweenTarget] ApplyTranslation(%f, %f) on %s"), Value.X, Value.Y, *W->GetName());
 }
 
 void FWidgetTweenTarget::ApplyScale(const FVector2D& Value)
@@ -148,13 +172,13 @@ void FWidgetTweenTarget::ApplyScale(const FVector2D& Value)
 	UWidget* W = WeakWidget.Get();
 	if (!W)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[TweenTarget] ApplyScale — widget is null"));
+		UE_LOG(LogCoreTweenTarget, Warning, TEXT("[TweenTarget] ApplyScale � widget is null"));
 		return;
 	}
 	FWidgetTransform Transform = W->GetRenderTransform();
 	Transform.Scale = Value;
 	W->SetRenderTransform(Transform);
-	UE_LOG(LogTemp, Verbose, TEXT("[TweenTarget] ApplyScale(%f, %f) on %s"), Value.X, Value.Y, *W->GetName());
+	UE_LOG(LogCoreTweenTarget, Verbose, TEXT("[TweenTarget] ApplyScale(%f, %f) on %s"), Value.X, Value.Y, *W->GetName());
 }
 
 void FWidgetTweenTarget::ApplyOpacity(const float Value)
@@ -163,11 +187,11 @@ void FWidgetTweenTarget::ApplyOpacity(const float Value)
 	if (W)
 	{
 		W->SetRenderOpacity(Value);
-		UE_LOG(LogTemp, Verbose, TEXT("[TweenTarget] ApplyOpacity(%f) on %s"), Value, *W->GetName());
+		UE_LOG(LogCoreTweenTarget, Verbose, TEXT("[TweenTarget] ApplyOpacity(%f) on %s"), Value, *W->GetName());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[TweenTarget] ApplyOpacity — widget is null"));
+		UE_LOG(LogCoreTweenTarget, Warning, TEXT("[TweenTarget] ApplyOpacity � widget is null"));
 	}
 }
 
@@ -176,7 +200,7 @@ void FWidgetTweenTarget::ApplyColor(const FLinearColor& Value)
 	UWidget* W = WeakWidget.Get();
 	if (!W)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[TweenTarget] ApplyColor — widget is null"));
+		UE_LOG(LogCoreTweenTarget, Warning, TEXT("[TweenTarget] ApplyColor � widget is null"));
 		return;
 	}
 	if (UUserWidget* UW = Cast<UUserWidget>(W))
