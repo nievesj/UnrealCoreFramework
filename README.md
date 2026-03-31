@@ -23,7 +23,7 @@ A modular Unreal Engine 5 plugin providing basic game systems to build upon: gam
 
 - **EnhancedInput** — Data-driven input binding
 - **CommonUI** — Activatable widget stack and viewport client
-- **AsyncFlow** — C++20 coroutine task system (`TTask<T>`, `co_await`)
+- [**AsyncFlow**](https://github.com/nievesj/AsyncFlow) — C++20 coroutine task system (`TTask<T>`, `co_await`)
 - **ModelViewViewModel** — MVVM base classes for UI data binding
 - **OnlineSubsystemUtils** — Online session utilities
 
