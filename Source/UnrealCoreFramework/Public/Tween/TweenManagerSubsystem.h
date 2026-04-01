@@ -1,34 +1,62 @@
-﻿#pragma once
+﻿// MIT License
+//
+// Copyright (c) 2026 José M. Nieves
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#pragma once
 
 #include "SubSystems/Base/CoreGameInstanceSubsystem.h"
-#include "Tickable.h"
 #include "UI/UiCoreFrameworkTypes.h"
+#include "AsyncFlowTask.h"
 
 #include "TweenManagerSubsystem.generated.h"
 
-enum class EWidgetTranslationType : uint8;
+DECLARE_LOG_CATEGORY_EXTERN(LogCoreTweenManager, Log, All);
+
 class UCoreWidget;
-enum class EBUIEasingType : uint8;
 class UWidget;
 
 UCLASS()
-class UNREALCOREFRAMEWORK_API UTweenManagerSubsystem : public UCoreGameInstanceSubsystem, public FTickableGameObject
+class UNREALCOREFRAMEWORK_API UTweenManagerSubsystem : public UCoreGameInstanceSubsystem
 {
 	GENERATED_BODY()
 
 public:
-	virtual void	Initialize(FSubsystemCollectionBase& Collection) override;
-	virtual void	Deinitialize() override;
-	virtual bool	IsTickable() const override;
-	virtual TStatId GetStatId() const override;
-	virtual void	Tick(float DeltaTime) override;
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	virtual void Deinitialize() override;
 
-	/** Play a widget transition effect */
+	/** Play a widget transition effect (fire-and-forget Blueprint entry point) */
 	UFUNCTION(BlueprintCallable, Category = "WidgetAnimation")
 	void PlayWidgetTransitionEffect(
 		UCoreWidget*						 Widget,
 		const FWidgetTweenTransitionOptions& TransitionOptions,
 		EWidgetTransitionMode				 TransitionMode);
+
+	/**
+	 * Play a widget transition effect as a coroutine.
+	 * Resolves when the animation completes.
+	 */
+	AsyncFlow::TTask<void> PlayWidgetTransitionEffectTask(
+		UCoreWidget* Widget,
+		const FWidgetTweenTransitionOptions& TransitionOptions,
+		EWidgetTransitionMode TransitionMode);
 
 	/** Play a preset animation */
 	UFUNCTION(BlueprintCallable, Category = "WidgetAnimation")
@@ -44,17 +72,17 @@ public:
 	bool ShouldPlayAnimations() const;
 
 protected:
-	void PlayScaleAnimation(
+	AsyncFlow::TTask<void> PlayScaleAnimationTask(
 		UCoreWidget*						 Widget,
 		const FWidgetTweenTransitionOptions& TransitionOptions,
 		EWidgetTransitionMode				 TransitionMode);
 
-	void PlayTranslationAnimation(
+	AsyncFlow::TTask<void> PlayTranslationAnimationTask(
 		UCoreWidget*						 Widget,
 		const FWidgetTweenTransitionOptions& TransitionOptions,
 		EWidgetTransitionMode				 TransitionMode);
 
-	void PlayFadeAnimation(
+	AsyncFlow::TTask<void> PlayFadeAnimationTask(
 		UCoreWidget*						 Widget,
 		const FWidgetTweenTransitionOptions& TransitionOptions,
 		EWidgetTransitionMode				 TransitionMode);
@@ -64,13 +92,17 @@ protected:
 		FVector2D&			   OutStart,
 		FVector2D&			   OutEnd);
 
-	void CreateAndPlayTween(
+	AsyncFlow::TTask<void> CreateAndPlayTweenTask(
 		UCoreWidget*	 Widget,
 		const FVector2D& StartScale, const FVector2D& EndScale,
 		const FVector2D& StartTranslation, const FVector2D& EndTranslation,
 		float StartOpacity, float EndOpacity, float Duration,
-		EBUIEasingType EasingType, EWidgetTransitionMode TransitionMode);
+		ECoreTweenEasingType EasingType, EWidgetTransitionMode TransitionMode);
 
 private:
 	TMap<FName, FWidgetTweenTransitionOptions> AnimationPresets;
+
+	/** Active animation task (needs next-frame deferral) */
+	AsyncFlow::TTask<void> ActiveAnimationTask;
 };
+

@@ -1,10 +1,33 @@
-﻿#include "SubSystems/LocalPlayer/UISubsystem.h"
+﻿// MIT License
+//
+// Copyright (c) 2026 José M. Nieves
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#include "SubSystems/LocalPlayer/UISubsystem.h"
 
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/Character.h"
 #include "Settings/UnrealCoreFrameworkSettings.h"
 #include "UI/CoreHUD.h"
 #include "UI/MainUiContainer.h"
+#include "UI/UiCoreFrameworkTypes.h"
 #include "VisualLogger/VisualLogger.h"
 
 DEFINE_LOG_CATEGORY(LogUISubsystem);
@@ -32,10 +55,13 @@ UCoreWidget* UUISubsystem::CreateViewportPage(APlayerController* Owner, TSubclas
 	if (UCoreWidget* Page = CreateWidget<UCoreWidget>(Owner, PageClass))
 	{
 		Page->AddToViewport();
-		// IPageableWidgetInterface* PageInt = Cast<IPageableWidgetInterface>(Page);
+		CoreWidgetsOpen.Push(Page);
 
-		// CoreWidgetsOpen.Push(PageInt);
-		// PageInt->Open();
+		if (IPageableWidgetInterface* PageInt = Cast<IPageableWidgetInterface>(Page))
+		{
+			PageInt->Open();
+		}
+
 		UE_VLOG_UELOG(this, LogUISubsystem, Log, TEXT("Created Page %s"), *Page->GetName());
 		return Page;
 	}
@@ -48,9 +74,10 @@ void UUISubsystem::RemoveViewportPage(IPageableWidgetInterface* Page)
 {
 	if (Page)
 	{
-		// CoreWidgetsOpen.Remove(Page);
 		if (UCoreWidget* Widget = Cast<UCoreWidget>(Page))
 		{
+			CoreWidgetsOpen.Remove(Widget);
+
 			if (APlayerController* PC = Widget->GetOwningPlayer())
 			{
 				SetPlayerControllerInput(PC, ShouldDisablePlayerControllerInput());
@@ -63,12 +90,15 @@ void UUISubsystem::RemoveViewportPage(IPageableWidgetInterface* Page)
 
 void UUISubsystem::RemoveAllViewportPages()
 {
-	/*for (IPageableWidgetInterface* Page : CoreWidgetsOpen)
+	for (UCoreWidget* Widget : CoreWidgetsOpen)
 	{
-		Page->Close();
+		if (IPageableWidgetInterface* Page = Cast<IPageableWidgetInterface>(Widget))
+		{
+			Page->Close();
+		}
 	}
 
-	CoreWidgetsOpen.Empty();*/
+	CoreWidgetsOpen.Empty();
 }
 
 UCoreWidget* UUISubsystem::AddWidgetToStack(const TSubclassOf<UCoreWidget>& PageClass, const EWidgetContainerType& StackContainerType)
@@ -76,25 +106,47 @@ UCoreWidget* UUISubsystem::AddWidgetToStack(const TSubclassOf<UCoreWidget>& Page
 	if (!MainUiContainer)
 	{
 		UE_VLOG_UELOG(this, LogUISubsystem, Error, TEXT("UUISubsystem::AddWidgetToStack - MainUiContainer is invalid"));
+		return nullptr;
 	}
 	UCoreWidget* Widget = MainUiContainer->AddWidgetToStack(PageClass, StackContainerType);
-	// Widget->Show();
+	if (Widget)
+	{
+		Widget->Show();
+	}
 	return Widget;
 }
 
-void UUISubsystem::RemoveWidgetFromStack(UCoreWidget& Widget, const EWidgetContainerType& StackContainerType, bool Destroy)
+void UUISubsystem::RemoveWidgetFromStack(UCoreWidget* Widget, const EWidgetContainerType& StackContainerType, bool Destroy)
 {
 	if (!MainUiContainer)
 	{
 		UE_VLOG_UELOG(this, LogUISubsystem, Error, TEXT("UUISubsystem::RemoveWidgetFromStack - MainUiContainer is invalid"));
+		return;
+	}
+
+	if (!Widget)
+	{
+		UE_VLOG_UELOG(this, LogUISubsystem, Warning, TEXT("UUISubsystem::RemoveWidgetFromStack - Widget is invalid"));
+		return;
 	}
 
 	MainUiContainer->RemoveWidgetFromStack(Widget, StackContainerType);
+
+	if (Destroy)
+	{
+		Widget->RemoveFromParent();
+	}
 }
 
 IPageableWidgetInterface* UUISubsystem::GetTopPage()
 {
-	// return CoreWidgetsOpen.Top();
+	for (int32 i = CoreWidgetsOpen.Num() - 1; i >= 0; --i)
+	{
+		if (IPageableWidgetInterface* Page = Cast<IPageableWidgetInterface>(CoreWidgetsOpen[i]))
+		{
+			return Page;
+		}
+	}
 	return nullptr;
 }
 
@@ -126,29 +178,30 @@ void UUISubsystem::CreateMainUIContainer()
 		MainUiContainer = Cast<UMainUiContainer>(Widget);
 
 		UCorePage* Page = MainUiContainer->AddWidgetToStack<UCorePage>(Settings->MainMenuPage, EWidgetContainerType::Page);
-		// Page->Open();
+		if (Page)
+		{
+			Page->Open();
+		}
 	}
 }
 
 bool UUISubsystem::ShouldDisablePlayerControllerInput()
 {
-	if (CoreWidgetsOpen.IsEmpty())
+	for (UCoreWidget* Widget : CoreWidgetsOpen)
 	{
-		return false;
-	}
-
-	/*for (const IPageableWidgetInterface* Page : CoreWidgetsOpen)
-	{
-		if (Page->DisablePlayerControllerInput)
+		if (const IPageableWidgetInterface* Page = Cast<IPageableWidgetInterface>(Widget))
 		{
-			return true;
+			if (Page->GetDisablePlayerInput())
+			{
+				return true;
+			}
 		}
 	}
-*/
+
 	return false;
 }
 
-void UUISubsystem::SetPlayerControllerInput(APlayerController* PC, bool IsDisabled)
+void UUISubsystem::SetPlayerControllerInput(APlayerController* PC, bool bIsDisabled)
 {
 	if (!PC)
 	{
@@ -163,15 +216,38 @@ void UUISubsystem::SetPlayerControllerInput(APlayerController* PC, bool IsDisabl
 		return;
 	}
 
-	IsDisabled ? Character->DisableInput(PC) : Character->EnableInput(PC);
+	bIsDisabled ? Character->DisableInput(PC) : Character->EnableInput(PC);
 }
 
 void UUISubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
+	Super::Initialize(Collection);
 	UE_VLOG_UELOG(this, LogUISubsystem, Log, TEXT("Initializing UI Subsystem"));
 }
 
 void UUISubsystem::Deinitialize()
 {
-	UE_LOG(LogUISubsystem, Warning, TEXT("Deinitializing UI Subsystem"))
+	UE_LOG(LogUISubsystem, Warning, TEXT("Deinitializing UI Subsystem"));
+
+	CoreWidgetsOpen.Empty();
+	PageHistory.Empty();
+	MainUiContainer = nullptr;
+
+	Super::Deinitialize();
+}
+
+void UUISubsystem::GoBack()
+{
+	if (PageHistory.Num() == 0)
+	{
+		UE_VLOG_UELOG(this, LogUISubsystem, Warning, TEXT("GoBack: No pages in history."));
+		return;
+	}
+
+	const TSubclassOf<UCorePage> PreviousPageClass = PageHistory.Pop();
+
+	if (MainUiContainer)
+	{
+		AddWidgetToStack(PreviousPageClass, EWidgetContainerType::Page);
+	}
 }

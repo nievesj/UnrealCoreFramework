@@ -1,4 +1,24 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+﻿// MIT License
+//
+// Copyright (c) 2026 José M. Nieves
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #pragma once
 
@@ -6,10 +26,9 @@
 
 #include "UiCoreFrameworkTypes.generated.h"
 
-enum class ETweenEaseType : uint8;
 enum class ETransitionCurve : uint8;
 enum class ECommonSwitcherTransition : uint8;
-enum class EBUIEasingType : uint8;
+enum class ECoreTweenEasingType : uint8;
 
 namespace EUMGSequencePlayMode
 {
@@ -25,30 +44,17 @@ enum class EWidgetContainerType : uint8
 };
 
 UENUM(BlueprintType)
-enum class EWidgetTransitionType : uint8
+enum class ECoreModalResult : uint8
 {
-	NotUsed,
-	Scale,
-	Translation,
-	Fade
+	/** User pressed the confirm button (OK / Yes) */
+	Confirmed,
+	/** User pressed the cancel button (Cancel / No) */
+	Cancelled,
+	/** Modal was dismissed without an explicit choice (close button, escape, etc.) */
+	Dismissed
 };
 
-UENUM(BlueprintType)
-enum class EWidgetTranslationType : uint8
-{
-	None,
-	FromLeft,
-	FromRight,
-	FromTop,
-	FromBottom,
-};
-
-UENUM(BlueprintType)
-enum class EWidgetTransitionMode : uint8
-{
-	Intro,
-	Outtro,
-};
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnModalResultDelegate, ECoreModalResult, Result);
 
 UENUM(BlueprintType)
 enum class EWidgetAnimationType : uint8
@@ -57,6 +63,30 @@ enum class EWidgetAnimationType : uint8
 	CommonUiDefault,
 	WidgetTween,
 	WidgetAnimation,
+};
+
+UENUM(BlueprintType)
+enum class EWidgetTransitionMode : uint8
+{
+	Intro,
+	Outro,
+};
+
+UENUM(BlueprintType)
+enum class EWidgetTransitionType : uint8
+{
+	Fade,
+	Scale,
+	Translation,
+};
+
+UENUM(BlueprintType)
+enum class EWidgetTranslationType : uint8
+{
+	FromLeft,
+	FromRight,
+	FromTop,
+	FromBottom,
 };
 
 USTRUCT(BlueprintType)
@@ -86,7 +116,7 @@ struct FWidgetTweenTransitionOptions
 	EWidgetTranslationType WidgetTranslationType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = WidgetTransitionOptions)
-	EBUIEasingType EasingType;
+	ECoreTweenEasingType EasingType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = WidgetTransitionOptions)
 	float TransitionTime = 0.5f;
@@ -156,16 +186,4 @@ struct FCoreWidgetAnimationSettings
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CoreWidget, meta = (EditCondition = "WidgetAnimationType == EWidgetAnimationType::WidgetTween"))
 	FWidgetTweenTransitionOptions TweenExitOptions;
-
-	// UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite, Category = CoreWidget, meta = (BindWidgetAnimOptional, EditCondition = "WidgetAnimationType == EWidgetAnimationType::WidgetAnimation"))
-	// UWidgetAnimation* WidgetAnimationIntro;
-
-	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CoreWidget, meta = (BindWidgetAnimOptional, EditCondition = "WidgetAnimationType == EWidgetAnimationType::WidgetAnimation"))
-	// FWidgetAnimationOptions WidgetAnimationOptionsIntro;
-
-	// UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite, Category = CoreWidget, meta = (BindWidgetAnimOptional, EditCondition = "WidgetAnimationType == EWidgetAnimationType::WidgetAnimation"))
-	// UWidgetAnimation* WidgetAnimationOuttro;
-
-	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = CoreWidget, meta = (BindWidgetAnimOptional, EditCondition = "WidgetAnimationType == EWidgetAnimationType::WidgetAnimation"))
-	// FWidgetAnimationOptions WidgetAnimationOptionsOuttro;
 };

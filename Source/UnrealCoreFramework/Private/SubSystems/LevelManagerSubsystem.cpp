@@ -1,13 +1,33 @@
-﻿#include "SubSystems/LevelManagerSubsystem.h"
+﻿// MIT License
+//
+// Copyright (c) 2026 José M. Nieves
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
-#include "Containers/UnrealString.h"
-#include "CoreGlobals.h"
+#include "SubSystems/LevelManagerSubsystem.h"
+
+#include "Async/CoreAsyncTypes.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
-#include "Logging/LogVerbosity.h"
-#include "Subsystems/SubsystemCollection.h"
-#include "UObject/SoftObjectPtr.h"
-#include "UObject/UObjectGlobals.h"
+#include "AsyncFlow.h"
+#include "AsyncFlowLevelAwaiters.h"
+#include "AsyncFlowDebug.h"
 
 void ULevelManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -16,52 +36,58 @@ void ULevelManagerSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void ULevelManagerSubsystem::Deinitialize()
 {
-	Super::Deinitialize();
+	for (TPair<FString, AsyncFlow::TTask<bool>>& Pair : ActiveLevelTasks)
+	{
+		if (Pair.Value.IsValid() && !Pair.Value.IsCompleted())
+		{
+			Pair.Value.Cancel();
+		}
+	}
+	ActiveLevelTasks.Empty();
 	LoadingLevels.Empty();
+
+	Super::Deinitialize();
 }
 
 void ULevelManagerSubsystem::LoadLevel(const FString& LevelPath,
-	ELevelOperation									  Operation,
-	ELevelLoadMethod								  LoadMethod)
+	ELevelOperation Operation,
+	ELevelLoadMethod LoadMethod)
 {
-	LoadLevel(LevelPath, FLevelLoadingCallback(), Operation, LoadMethod);
+	AsyncFlow::TTask<bool> Task = LoadLevelTask(LevelPath, Operation);
+	const FString DebugName = FString::Printf(TEXT("LevelLoad_%s"), *LevelPath);
+	Task.SetDebugName(DebugName);
+	AsyncFlow::DebugRegisterTask(Task);
+	Task.Start();
+	ActiveLevelTasks.Add(LevelPath, MoveTemp(Task));
 }
 
 void ULevelManagerSubsystem::LoadLevelSoftObject(const TSoftObjectPtr<UWorld>& Level,
-	ELevelOperation															   Operation,
-	ELevelLoadMethod														   LoadMethod)
+	ELevelOperation Operation,
+	ELevelLoadMethod LoadMethod)
 {
-	LoadLevel(Level, FLevelLoadingCallback(), Operation, LoadMethod);
+	if (!Level.IsValid() && Level.IsNull())
+	{
+		OnLevelLoadingError.Broadcast(TEXT("Unknown"), TEXT("Invalid level reference"));
+		return;
+	}
+
+	LoadLevel(Level.GetAssetName(), Operation, LoadMethod);
 }
 
-void ULevelManagerSubsystem::LoadLevel(const FString& LevelPath,
-	const FLevelLoadingCallback&					  Callback,
-	ELevelOperation									  Operation,
-	ELevelLoadMethod								  LoadMethod)
+AsyncFlow::TTask<bool> ULevelManagerSubsystem::LoadLevelTask(const FString& LevelPath, ELevelOperation Operation)
 {
+	UCF_ASYNC_CONTRACT(this);
+
 	if (!ValidateLevelPath(LevelPath))
 	{
 		OnLevelLoadingError.Broadcast(LevelPath, TEXT("Invalid level path"));
-		if (Callback.IsBound())
-		{
-			Callback.Execute(false);
-		}
-		return;
+		co_return false;
 	}
 
 	if (IsLevelLoading(LevelPath))
 	{
 		OnLevelLoadingError.Broadcast(LevelPath, TEXT("Level is already being loaded"));
-		if (Callback.IsBound())
-		{
-			Callback.Execute(false);
-		}
-		return;
-	}
-
-	if (Callback.IsBound())
-	{
-		LoadingCallbacks.Add(LevelPath, Callback);
+		co_return false;
 	}
 
 	OnLevelLoadingStarted.Broadcast(LevelPath);
@@ -69,79 +95,75 @@ void ULevelManagerSubsystem::LoadLevel(const FString& LevelPath,
 
 	if (Operation == ELevelOperation::Open)
 	{
-		// For opening levels, we need to use a different mechanism
-		// Store the level path for use in the callback
-		PendingLevelPath = LevelPath;
+		// Full map travel — world is destroyed, coroutine will not resume.
+		// Fire the delegate before opening so listeners get notified.
+		UGameplayStatics::OpenLevel(this, *LevelPath, true);
 
-		// Register the delegate for level load completion
-		LevelLoadHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &ULevelManagerSubsystem::OnLevelOpenComplete);
-
-		// Open the level with the requested method
-		UGameplayStatics::OpenLevel(this, *LevelPath, LoadMethod == ELevelLoadMethod::Async);
+		// If we reach here (synchronous open or fallback), mark complete.
+		LoadingLevels.Add(LevelPath, false);
+		OnLevelLoadingComplete.Broadcast(LevelPath);
+		co_return true;
 	}
-	else // Stream
+	else
 	{
-		// For streaming levels, we use a helper object with a latent action
-		auto* CallbackHelper = NewObject<ULevelLoadingCallbackHelper>();
-		CallbackHelper->Callback = Callback;
-		CallbackHelper->LevelPath = LevelPath;
-		CallbackHelper->LevelManager = this;
+		// Stream — use AsyncFlow level streaming awaiter
+		const bool bSuccess = co_await AsyncFlow::LoadStreamLevel(this, FName(*LevelPath), true);
 
-		FLatentActionInfo LatentInfo;
-		LatentInfo.CallbackTarget = CallbackHelper;
-		LatentInfo.ExecutionFunction = "OnLevelLoaded";
-		LatentInfo.UUID = FGuid::NewGuid().A;
-		LatentInfo.Linkage = 0;
+		LoadingLevels.Add(LevelPath, false);
 
-		UGameplayStatics::LoadStreamLevel(
-			this,
-			FName(*LevelPath),
-			true,
-			LoadMethod == ELevelLoadMethod::Async, // If Async is false, this will block
-			LatentInfo);
+		if (bSuccess)
+		{
+			OnLevelLoadingComplete.Broadcast(LevelPath);
+		}
+		else
+		{
+			OnLevelLoadingError.Broadcast(LevelPath, TEXT("Stream level load failed"));
+		}
+
+		co_return bSuccess;
 	}
 }
 
-void ULevelManagerSubsystem::LoadLevel(const TSoftObjectPtr<UWorld>& Level,
-	const FLevelLoadingCallback&									 Callback,
-	ELevelOperation													 Operation,
-	ELevelLoadMethod												 LoadMethod)
+AsyncFlow::TTask<bool> ULevelManagerSubsystem::LoadLevelTask(const TSoftObjectPtr<UWorld>& Level, ELevelOperation Operation)
 {
-	if (!Level.IsValid())
+	UCF_ASYNC_CONTRACT(this);
+
+	if (!Level.IsValid() && Level.IsNull())
 	{
 		OnLevelLoadingError.Broadcast(TEXT("Unknown"), TEXT("Invalid level reference"));
-		if (Callback.IsBound())
-		{
-			Callback.Execute(false);
-		}
-		return;
+		co_return false;
 	}
 
-	LoadLevel(Level.GetAssetName(), Callback, Operation, LoadMethod);
+	const bool bResult = co_await LoadLevelTask(Level.GetAssetName(), Operation);
+	co_return bResult;
+}
+
+AsyncFlow::TTask<bool> ULevelManagerSubsystem::UnloadLevelTask(const FString& LevelPath)
+{
+	UCF_ASYNC_CONTRACT(this);
+
+	if (!ValidateLevelPath(LevelPath))
+	{
+		OnLevelLoadingError.Broadcast(LevelPath, TEXT("Invalid level path"));
+		co_return false;
+	}
+
+	if (!IsLevelLoaded(LevelPath))
+	{
+		co_return false;
+	}
+
+	const bool bSuccess = co_await AsyncFlow::UnloadStreamLevel(this, FName(*LevelPath));
+	co_return bSuccess;
 }
 
 void ULevelManagerSubsystem::UnloadLevel(const FString& LevelPath)
 {
-	if (!ValidateLevelPath(LevelPath))
-	{
-		OnLevelLoadingError.Broadcast(LevelPath, TEXT("Invalid level path"));
-		return;
-	}
-
-	if (IsLevelLoaded(LevelPath))
-	{
-		FLatentActionInfo LatentInfo;
-		LatentInfo.CallbackTarget = this;
-		LatentInfo.UUID = FGuid::NewGuid().A;
-		LatentInfo.Linkage = 0;
-
-		UGameplayStatics::UnloadStreamLevel(
-			this,
-			FName(*LevelPath),
-			LatentInfo,
-			true // Block on unloading
-		);
-	}
+	AsyncFlow::TTask<bool> Task = UnloadLevelTask(LevelPath);
+	const FString DebugName = FString::Printf(TEXT("LevelUnload_%s"), *LevelPath);
+	Task.SetDebugName(DebugName);
+	Task.Start();
+	ActiveLevelTasks.Add(LevelPath, MoveTemp(Task));
 }
 
 bool ULevelManagerSubsystem::IsLevelLoaded(const FString& LevelPath) const
@@ -161,40 +183,9 @@ bool ULevelManagerSubsystem::IsLevelLoading(const FString& LevelPath) const
 	return LoadingLevels.Contains(LevelPath) && LoadingLevels[LevelPath];
 }
 
-void ULevelManagerSubsystem::HandleLoadingComplete(const FString& LevelPath)
-{
-	LoadingLevels.Add(LevelPath, false);
-	OnLevelLoadingComplete.Broadcast(LevelPath);
-
-	// Execute and remove the callback if it exists
-	if (FLevelLoadingCallback* Callback = LoadingCallbacks.Find(LevelPath))
-	{
-		if (Callback->IsBound())
-		{
-			Callback->Execute(true);
-		}
-		LoadingCallbacks.Remove(LevelPath);
-	}
-}
-
-void ULevelManagerSubsystem::OnLevelOpenComplete(UWorld* World)
-{
-	// Clean up the delegate handle
-	// Clean up the delegate handle
-	if (LevelLoadHandle.IsValid())
-	{
-		FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(LevelLoadHandle);
-		LevelLoadHandle.Reset();
-	}
-
-	if (!PendingLevelPath.IsEmpty())
-	{
-		HandleLoadingComplete(PendingLevelPath);
-		PendingLevelPath.Empty();
-	}
-}
-
 bool ULevelManagerSubsystem::ValidateLevelPath(const FString& LevelPath)
 {
 	return !LevelPath.IsEmpty();
 }
+
+
