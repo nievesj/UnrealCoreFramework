@@ -177,4 +177,3 @@ void UCoreModal::Handle_OnCloseClicked()
 {
 	Dismiss();
 }
-

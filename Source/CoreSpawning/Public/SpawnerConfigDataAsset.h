@@ -68,4 +68,3 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawner")
 	bool bAutoStart = true;
 };
-

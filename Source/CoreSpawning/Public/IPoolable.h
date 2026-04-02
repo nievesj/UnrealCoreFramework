@@ -54,4 +54,3 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Pool")
 	void ResetToPool();
 };
-

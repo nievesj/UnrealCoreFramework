@@ -60,4 +60,3 @@ void UCoreWorldSubsystem::Deinitialize()
 	Super::Deinitialize();
 	UE_LOG(LogCoreWorldSubsystem, Log, TEXT("Initialize UCoreWorldSubsystem"));
 }
-

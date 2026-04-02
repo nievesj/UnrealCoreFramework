@@ -46,4 +46,3 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SpawnerVolume")
 	TObjectPtr<UBoxComponent> SpawnVolume;
 };
-

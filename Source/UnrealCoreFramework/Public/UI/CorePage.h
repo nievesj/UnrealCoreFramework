@@ -38,7 +38,10 @@ class UNREALCOREFRAMEWORK_API UCorePage : public UCoreWidget, public IPageableWi
 public:
 	virtual void Open() override;
 	virtual void Close() override;
-	virtual bool GetDisablePlayerInput() const override { return DisablePlayerInput; }
+	virtual bool GetDisablePlayerInput() const override
+	{
+		return DisablePlayerInput;
+	}
 
 
 protected:

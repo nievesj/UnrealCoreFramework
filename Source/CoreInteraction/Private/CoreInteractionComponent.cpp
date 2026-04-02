@@ -84,4 +84,3 @@ bool UCoreInteractionComponent::CanInteract_Implementation(AActor* Interactor) c
 
 	return true;
 }
-

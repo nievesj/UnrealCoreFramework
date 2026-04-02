@@ -130,4 +130,3 @@ void UCoreInteractorComponent::TryInteract()
 	IInteractable::Execute_Interact(FocusedInteractionComp, GetOwner());
 	OnInteracted.Broadcast(FocusedActor);
 }
-

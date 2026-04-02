@@ -288,4 +288,3 @@ void FWidgetTweenTarget::ApplyMaxDesiredHeight(const float Value)
 		SizeBox->SetMaxDesiredHeight(Value);
 	}
 }
-

@@ -249,8 +249,7 @@ AsyncFlow::TTask<bool> UCoreSaveSubsystem::SaveGameAsync(const FString& SlotName
 	FAsyncSaveGameToSlotDelegate OnComplete;
 	bool bAsyncResult = false;
 
-	OnComplete.BindWeakLambda(this, [this, SlotName, &bAsyncResult](const FString& InSlotName, const int32 InUserIndex, bool bSuccess)
-	{
+	OnComplete.BindWeakLambda(this, [this, SlotName, &bAsyncResult](const FString& InSlotName, const int32 InUserIndex, bool bSuccess) {
 		bAsyncResult = bSuccess;
 		if (bSuccess)
 		{
@@ -289,8 +288,7 @@ AsyncFlow::TTask<bool> UCoreSaveSubsystem::LoadGameAsync(const FString& SlotName
 	bool bAsyncResult = false;
 
 	FAsyncLoadGameFromSlotDelegate OnComplete;
-	OnComplete.BindWeakLambda(this, [this, SlotName, &bAsyncResult](const FString& InSlotName, const int32 InUserIndex, USaveGame* LoadedGame)
-	{
+	OnComplete.BindWeakLambda(this, [this, SlotName, &bAsyncResult](const FString& InSlotName, const int32 InUserIndex, USaveGame* LoadedGame) {
 		UCoreFrameworkSaveGame* TypedSave = Cast<UCoreFrameworkSaveGame>(LoadedGame);
 		if (TypedSave)
 		{

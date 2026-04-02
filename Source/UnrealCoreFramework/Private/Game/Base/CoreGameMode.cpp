@@ -39,4 +39,6 @@ void ACoreGameMode::InitGameState()
 	OnGameStateInitialized();
 }
 
-void ACoreGameMode::OnGameStateInitialized() {}
+void ACoreGameMode::OnGameStateInitialized()
+{
+}

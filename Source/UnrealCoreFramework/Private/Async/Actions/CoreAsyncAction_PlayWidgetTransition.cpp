@@ -74,4 +74,3 @@ AsyncFlow::TTask<void> UCoreAsyncAction_PlayWidgetTransition::RunTransition()
 	OnComplete.Broadcast();
 	SetReadyToDestroy();
 }
-

@@ -74,7 +74,7 @@ UCoreViewModel* UViewModelManagerSubsystem::GetModel(const UObject* TrackedObjec
 	}
 
 	UCoreViewModel* ViewModel = Model->Get();
-	const UObject*	Source = ViewModel->GetSource();
+	const UObject* Source = ViewModel->GetSource();
 	// Verify the source matches and is still valid
 	if (!IsValid(Source) || Source->GetUniqueID() != TrackedObject->GetUniqueID())
 	{

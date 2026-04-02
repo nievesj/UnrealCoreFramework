@@ -50,4 +50,3 @@ void APoolableActor::ResetToPool_Implementation()
 	SetActorLocation(FVector::ZeroVector);
 	SetActorRotation(FRotator::ZeroRotator);
 }
-

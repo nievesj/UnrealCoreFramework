@@ -54,4 +54,3 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Spawner")
 	static void ReleaseFromConfig(UObjectPoolSubsystem* PoolSubsystem, const USpawnerConfigDataAsset* Config, AActor* Actor);
 };
-

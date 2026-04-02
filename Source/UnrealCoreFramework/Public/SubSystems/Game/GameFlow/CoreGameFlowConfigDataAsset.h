@@ -73,4 +73,3 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GameFlow")
 	TArray<FCoreGameFlowTransitionDefinition> Transitions;
 };
-

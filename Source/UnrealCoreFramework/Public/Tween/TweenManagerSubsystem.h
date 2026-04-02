@@ -45,9 +45,9 @@ public:
 	/** Play a widget transition effect (fire-and-forget Blueprint entry point) */
 	UFUNCTION(BlueprintCallable, Category = "WidgetAnimation")
 	void PlayWidgetTransitionEffect(
-		UCoreWidget*						 Widget,
+		UCoreWidget* Widget,
 		const FWidgetTweenTransitionOptions& TransitionOptions,
-		EWidgetTransitionMode				 TransitionMode);
+		EWidgetTransitionMode TransitionMode);
 
 	/**
 	 * Play a widget transition effect as a coroutine.
@@ -61,8 +61,8 @@ public:
 	/** Play a preset animation */
 	UFUNCTION(BlueprintCallable, Category = "WidgetAnimation")
 	bool PlayPresetAnimation(
-		UCoreWidget*		  Widget,
-		const FName&		  PresetName,
+		UCoreWidget* Widget,
+		const FName& PresetName,
 		EWidgetTransitionMode TransitionMode);
 
 	/** Register animation presets */
@@ -73,31 +73,36 @@ public:
 
 protected:
 	AsyncFlow::TTask<void> PlayScaleAnimationTask(
-		UCoreWidget*						 Widget,
+		UCoreWidget* Widget,
 		const FWidgetTweenTransitionOptions& TransitionOptions,
-		EWidgetTransitionMode				 TransitionMode);
+		EWidgetTransitionMode TransitionMode);
 
 	AsyncFlow::TTask<void> PlayTranslationAnimationTask(
-		UCoreWidget*						 Widget,
+		UCoreWidget* Widget,
 		const FWidgetTweenTransitionOptions& TransitionOptions,
-		EWidgetTransitionMode				 TransitionMode);
+		EWidgetTransitionMode TransitionMode);
 
 	AsyncFlow::TTask<void> PlayFadeAnimationTask(
-		UCoreWidget*						 Widget,
+		UCoreWidget* Widget,
 		const FWidgetTweenTransitionOptions& TransitionOptions,
-		EWidgetTransitionMode				 TransitionMode);
+		EWidgetTransitionMode TransitionMode);
 
 	static void GetViewportTranslationVectors(
 		EWidgetTranslationType TranslationType,
-		FVector2D&			   OutStart,
-		FVector2D&			   OutEnd);
+		FVector2D& OutStart,
+		FVector2D& OutEnd);
 
 	AsyncFlow::TTask<void> CreateAndPlayTweenTask(
-		UCoreWidget*	 Widget,
-		const FVector2D& StartScale, const FVector2D& EndScale,
-		const FVector2D& StartTranslation, const FVector2D& EndTranslation,
-		float StartOpacity, float EndOpacity, float Duration,
-		ECoreTweenEasingType EasingType, EWidgetTransitionMode TransitionMode);
+		UCoreWidget* Widget,
+		const FVector2D& StartScale,
+		const FVector2D& EndScale,
+		const FVector2D& StartTranslation,
+		const FVector2D& EndTranslation,
+		float StartOpacity,
+		float EndOpacity,
+		float Duration,
+		ECoreTweenEasingType EasingType,
+		EWidgetTransitionMode TransitionMode);
 
 private:
 	TMap<FName, FWidgetTweenTransitionOptions> AnimationPresets;
@@ -105,4 +110,3 @@ private:
 	/** Active animation task (needs next-frame deferral) */
 	AsyncFlow::TTask<void> ActiveAnimationTask;
 };
-

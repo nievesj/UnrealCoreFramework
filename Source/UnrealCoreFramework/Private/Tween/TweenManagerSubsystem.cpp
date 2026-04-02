@@ -51,9 +51,9 @@ void UTweenManagerSubsystem::Deinitialize()
 }
 
 void UTweenManagerSubsystem::PlayWidgetTransitionEffect(
-	UCoreWidget*						 Widget,
+	UCoreWidget* Widget,
 	const FWidgetTweenTransitionOptions& TransitionOptions,
-	EWidgetTransitionMode				 TransitionMode)
+	EWidgetTransitionMode TransitionMode)
 {
 	if (!Widget)
 	{
@@ -163,8 +163,8 @@ AsyncFlow::TTask<void> UTweenManagerSubsystem::PlayWidgetTransitionEffectTask(
 }
 
 bool UTweenManagerSubsystem::PlayPresetAnimation(
-	UCoreWidget*		  Widget,
-	const FName&		  PresetName,
+	UCoreWidget* Widget,
+	const FName& PresetName,
 	EWidgetTransitionMode TransitionMode)
 {
 	if (!Widget)
@@ -194,30 +194,33 @@ bool UTweenManagerSubsystem::ShouldPlayAnimations() const
 }
 
 AsyncFlow::TTask<void> UTweenManagerSubsystem::PlayScaleAnimationTask(
-	UCoreWidget*						 Widget,
+	UCoreWidget* Widget,
 	const FWidgetTweenTransitionOptions& TransitionOptions,
-	EWidgetTransitionMode				 TransitionMode)
+	EWidgetTransitionMode TransitionMode)
 {
 	UCF_ASYNC_CONTRACT(this);
 
 	const FVector2D Start = TransitionOptions.ScaleFrom;
 	const FVector2D End = TransitionOptions.ScaleTo;
-	const float		StartOpacity = TransitionOptions.FadeFrom;
-	const float		EndOpacity = TransitionOptions.FadeTo;
+	const float StartOpacity = TransitionOptions.FadeFrom;
+	const float EndOpacity = TransitionOptions.FadeTo;
 
 	co_await CreateAndPlayTweenTask(Widget,
-		Start, End,
-		FVector2D::ZeroVector, FVector2D::ZeroVector,
-		StartOpacity, EndOpacity,
+		Start,
+		End,
+		FVector2D::ZeroVector,
+		FVector2D::ZeroVector,
+		StartOpacity,
+		EndOpacity,
 		TransitionOptions.TransitionTime,
 		TransitionOptions.EasingType,
 		TransitionMode);
 }
 
 AsyncFlow::TTask<void> UTweenManagerSubsystem::PlayTranslationAnimationTask(
-	UCoreWidget*						 Widget,
+	UCoreWidget* Widget,
 	const FWidgetTweenTransitionOptions& TransitionOptions,
-	EWidgetTransitionMode				 TransitionMode)
+	EWidgetTransitionMode TransitionMode)
 {
 	UCF_ASYNC_CONTRACT(this);
 
@@ -252,25 +255,31 @@ AsyncFlow::TTask<void> UTweenManagerSubsystem::PlayTranslationAnimationTask(
 	}
 
 	co_await CreateAndPlayTweenTask(WeakWidget.Get(),
-		FVector2D::UnitVector, FVector2D::UnitVector,
-		Start, End,
-		TransitionOptions.FadeFrom, TransitionOptions.FadeTo,
+		FVector2D::UnitVector,
+		FVector2D::UnitVector,
+		Start,
+		End,
+		TransitionOptions.FadeFrom,
+		TransitionOptions.FadeTo,
 		TransitionOptions.TransitionTime,
 		TransitionOptions.EasingType,
 		TransitionMode);
 }
 
 AsyncFlow::TTask<void> UTweenManagerSubsystem::PlayFadeAnimationTask(
-	UCoreWidget*						 Widget,
+	UCoreWidget* Widget,
 	const FWidgetTweenTransitionOptions& TransitionOptions,
-	EWidgetTransitionMode				 TransitionMode)
+	EWidgetTransitionMode TransitionMode)
 {
 	UCF_ASYNC_CONTRACT(this);
 
 	co_await CreateAndPlayTweenTask(Widget,
-		FVector2D::UnitVector, FVector2D::UnitVector,
-		FVector2D::ZeroVector, FVector2D::ZeroVector,
-		TransitionOptions.FadeFrom, TransitionOptions.FadeTo,
+		FVector2D::UnitVector,
+		FVector2D::UnitVector,
+		FVector2D::ZeroVector,
+		FVector2D::ZeroVector,
+		TransitionOptions.FadeFrom,
+		TransitionOptions.FadeTo,
 		TransitionOptions.TransitionTime,
 		TransitionOptions.EasingType,
 		TransitionMode);
@@ -278,8 +287,8 @@ AsyncFlow::TTask<void> UTweenManagerSubsystem::PlayFadeAnimationTask(
 
 void UTweenManagerSubsystem::GetViewportTranslationVectors(
 	const EWidgetTranslationType TranslationType,
-	FVector2D&					 OutStart,
-	FVector2D&					 OutEnd)
+	FVector2D& OutStart,
+	FVector2D& OutEnd)
 {
 	if (!GEngine || !GEngine->GameViewport || !GEngine->GameViewport->Viewport)
 	{
@@ -310,11 +319,16 @@ void UTweenManagerSubsystem::GetViewportTranslationVectors(
 }
 
 AsyncFlow::TTask<void> UTweenManagerSubsystem::CreateAndPlayTweenTask(
-	UCoreWidget*	 Widget,
-	const FVector2D& StartScale, const FVector2D& EndScale,
-	const FVector2D& StartTranslation, const FVector2D& EndTranslation,
-	const float StartOpacity, const float EndOpacity, const float Duration,
-	const ECoreTweenEasingType EasingType, const EWidgetTransitionMode TransitionMode)
+	UCoreWidget* Widget,
+	const FVector2D& StartScale,
+	const FVector2D& EndScale,
+	const FVector2D& StartTranslation,
+	const FVector2D& EndTranslation,
+	const float StartOpacity,
+	const float EndOpacity,
+	const float Duration,
+	const ECoreTweenEasingType EasingType,
+	const EWidgetTransitionMode TransitionMode)
 {
 	UCF_ASYNC_CONTRACT(this);
 

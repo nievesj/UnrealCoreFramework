@@ -65,10 +65,10 @@
  * Usage (first line inside a coroutine body):
  *   UCF_ASYNC_CONTRACT(this);
  */
-#define UCF_ASYNC_CONTRACT(OwnerPtr) \
-	do \
-	{ \
-		TWeakObjectPtr<UObject> WeakOwner_Contract(OwnerPtr); \
+#define UCF_ASYNC_CONTRACT(OwnerPtr)                                                  \
+	do                                                                                \
+	{                                                                                 \
+		TWeakObjectPtr<UObject> WeakOwner_Contract(OwnerPtr);                         \
 		CO_CONTRACT([WeakOwner_Contract]() { return WeakOwner_Contract.IsValid(); }); \
-	} while (false)
-
+	}                                                                                 \
+	while (false)

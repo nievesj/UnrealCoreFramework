@@ -35,8 +35,8 @@ void URestRequest::Request(EHttpRequestType RequestType, FString Uri, FString Js
 {
 	ActiveRequestTask = RequestTask(RequestType, Uri, JsonData);
 	ActiveRequestTask.SetDebugName(FString::Printf(TEXT("HttpRequest_%s_%s"),
-		RequestType == EHttpRequestType::GET ? TEXT("GET") :
-		RequestType == EHttpRequestType::PUT ? TEXT("PUT") : TEXT("POST"),
+		RequestType == EHttpRequestType::GET ? TEXT("GET") : RequestType == EHttpRequestType::PUT ? TEXT("PUT")
+																								  : TEXT("POST"),
 		*Uri));
 	ActiveRequestTask.Start();
 }
@@ -58,8 +58,7 @@ AsyncFlow::TTask<FHttpResponsePtr> URestRequest::RequestTask(
 		const FString ResponseBody = Response->GetContentAsString();
 		HTTPResponseRecievedDelegate.Broadcast(0, ResponseCode, ResponseBody);
 
-		UE_LOG(LogCoreRestRequest, Log, TEXT("HTTP %d: %s"),
-			ResponseCode, *ResponseBody.Left(200));
+		UE_LOG(LogCoreRestRequest, Log, TEXT("HTTP %d: %s"), ResponseCode, *ResponseBody.Left(200));
 	}
 	else
 	{

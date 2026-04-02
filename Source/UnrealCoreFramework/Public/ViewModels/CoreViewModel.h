@@ -78,7 +78,10 @@ public:
 	}
 
 	/** Returns the source object that this ViewModel represents. */
-	UObject* GetSource() const { return Source; };
+	UObject* GetSource() const
+	{
+		return Source;
+	};
 
 	/** Gets the player controller associated with this ViewModel. */
 	UFUNCTION(BlueprintPure, Category = "Core|ViewModel")

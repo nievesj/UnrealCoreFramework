@@ -54,7 +54,10 @@ public:
 
 	/** Get the currently focused interactable actor. */
 	UFUNCTION(BlueprintPure, Category = "Interaction")
-	AActor* GetFocusedInteractable() const { return FocusedActor; }
+	AActor* GetFocusedInteractable() const
+	{
+		return FocusedActor;
+	}
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction", meta = (ClampMin = "0.0"))
 	float DetectionRadius = 300.0f;
@@ -77,4 +80,3 @@ private:
 	UPROPERTY(Transient)
 	TObjectPtr<UCoreInteractionComponent> FocusedInteractionComp;
 };
-

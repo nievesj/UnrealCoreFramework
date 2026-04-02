@@ -58,11 +58,17 @@ public:
 
 	/** Get the current state name. */
 	UFUNCTION(BlueprintPure, Category = "GameFlow")
-	FName GetCurrentStateName() const { return CurrentStateName; }
+	FName GetCurrentStateName() const
+	{
+		return CurrentStateName;
+	}
 
 	/** Get the current state object. */
 	UFUNCTION(BlueprintPure, Category = "GameFlow")
-	UCoreGameFlowState* GetCurrentState() const { return CurrentState; }
+	UCoreGameFlowState* GetCurrentState() const
+	{
+		return CurrentState;
+	}
 
 	/** Check if a transition to the target state is valid. */
 	UFUNCTION(BlueprintPure, Category = "GameFlow")
@@ -110,4 +116,3 @@ private:
 	UPROPERTY(Transient)
 	TMap<FName, TObjectPtr<UCoreGameFlowState>> StateInstances;
 };
-

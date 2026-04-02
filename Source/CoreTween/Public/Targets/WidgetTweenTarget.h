@@ -69,4 +69,3 @@ public:
 private:
 	TWeakObjectPtr<UWidget> WeakWidget;
 };
-

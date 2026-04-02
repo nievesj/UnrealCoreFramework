@@ -38,7 +38,7 @@ class UNREALCOREFRAMEWORK_API UCoreGameInstanceSubsystem : public UGameInstanceS
 	GENERATED_BODY()
 
 public:
-	virtual bool ShouldCreateSubsystem(UObject* Outer) const
+	virtual bool ShouldCreateSubsystem(UObject* Outer) const override
 	{
 		return true;
 	}

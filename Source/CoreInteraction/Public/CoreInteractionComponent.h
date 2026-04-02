@@ -63,4 +63,3 @@ public:
 private:
 	float LastInteractionTime = -999.0f;
 };
-

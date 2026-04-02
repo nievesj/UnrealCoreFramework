@@ -64,7 +64,10 @@ public:
 
 	/** Gets the associated ViewModel for this health component. */
 	UFUNCTION(BlueprintPure, Category = "Health|ViewModel")
-	UPlayerHealthViewModel* GetHealthViewModel() const { return HealthViewModel; }
+	UPlayerHealthViewModel* GetHealthViewModel() const
+	{
+		return HealthViewModel;
+	}
 
 	/** Sets a new maximum health value and clamps current health if needed. */
 	UFUNCTION(BlueprintCallable, Category = "Health")
@@ -83,19 +86,31 @@ public:
 
 	/** Returns the maximum health value. */
 	UFUNCTION(BlueprintPure, Category = "Health")
-	float GetMaxHealth() const { return MaxHealth; }
+	float GetMaxHealth() const
+	{
+		return MaxHealth;
+	}
 
 	/** Returns the current health value. */
 	UFUNCTION(BlueprintPure, Category = "Health")
-	float GetCurrentHealth() const { return CurrentHealth; }
+	float GetCurrentHealth() const
+	{
+		return CurrentHealth;
+	}
 
 	/** Returns the health regeneration rate per second. */
 	UFUNCTION(BlueprintPure, Category = "Health")
-	float GetHealthRegenRate() const { return HealthRegenRate; }
+	float GetHealthRegenRate() const
+	{
+		return HealthRegenRate;
+	}
 
 	/** Returns the damage multiplier scalar applied to incoming damage. */
 	UFUNCTION(BlueprintPure, Category = "Health")
-	float GetDamageMultiplier() const { return DamageMultiplier; }
+	float GetDamageMultiplier() const
+	{
+		return DamageMultiplier;
+	}
 
 protected:
 	/** Called when the game starts or when spawned. */

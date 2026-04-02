@@ -56,7 +56,7 @@ void UCoreInputSubsystem::HandleOnHardwareInputDeviceChanged(const FPlatformUser
 			// XInputController
 			// Dualsense
 			const FHardwareDeviceIdentifier& HardwareDeviceIdentifier = InputDeviceSubsystem->GetMostRecentlyUsedHardwareDevice(UserId);
-			const ECoreInputDeviceType		 CoreInputDeviceType = DetermineControllerType(HardwareDeviceIdentifier);
+			const ECoreInputDeviceType CoreInputDeviceType = DetermineControllerType(HardwareDeviceIdentifier);
 			if (OnCoreInputDeviceChanged.IsBound())
 			{
 				OnCoreInputDeviceChanged.Broadcast(CoreInputDeviceType);

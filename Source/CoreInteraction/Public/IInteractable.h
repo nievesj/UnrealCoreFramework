@@ -52,4 +52,3 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interaction")
 	bool CanInteract(AActor* Interactor) const;
 };
-

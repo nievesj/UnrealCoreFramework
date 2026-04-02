@@ -60,4 +60,3 @@ private:
 
 	AsyncFlow::TTask<void> RunTransition();
 };
-

@@ -48,4 +48,3 @@ FTransform ASpawnerVolume::GetSpawnTransform_Implementation()
 
 	return FTransform(GetActorRotation(), WorldPoint, FVector::OneVector);
 }
-

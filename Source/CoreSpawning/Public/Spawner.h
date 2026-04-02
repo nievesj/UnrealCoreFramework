@@ -62,7 +62,10 @@ public:
 	void ReleaseAll();
 
 	UFUNCTION(BlueprintPure, Category = "Spawner")
-	int32 GetAliveCount() const { return SpawnedActors.Num(); }
+	int32 GetAliveCount() const
+	{
+		return SpawnedActors.Num();
+	}
 
 protected:
 	virtual void BeginPlay() override;
@@ -87,4 +90,3 @@ private:
 	UPROPERTY(Transient)
 	TArray<TObjectPtr<AActor>> SpawnedActors;
 };
-

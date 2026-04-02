@@ -45,5 +45,8 @@ public:
 	virtual void Close();
 
 	/** @return true if player input should be disabled while this page is open. */
-	virtual bool GetDisablePlayerInput() const { return false; }
+	virtual bool GetDisablePlayerInput() const
+	{
+		return false;
+	}
 };

@@ -72,4 +72,3 @@ public:
 	//   virtual void ApplyLocation(const FVector& Value) = 0;
 	//   virtual void ApplyActorRotation(const FRotator& Value) = 0;
 };
-

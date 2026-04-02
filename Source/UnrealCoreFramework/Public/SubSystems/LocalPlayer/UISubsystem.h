@@ -50,11 +50,11 @@ class UNREALCOREFRAMEWORK_API UUISubsystem : public UCoreLocalPlayerSubsystem
 
 public:
 	UCoreWidget* CreateViewportPage(APlayerController* Owner, TSubclassOf<UCoreWidget> PageClass);
-	void		 RemoveViewportPage(IPageableWidgetInterface* Page);
-	void		 RemoveAllViewportPages();
+	void RemoveViewportPage(IPageableWidgetInterface* Page);
+	void RemoveAllViewportPages();
 
 	UCoreWidget* AddWidgetToStack(const TSubclassOf<UCoreWidget>& PageClass, const EWidgetContainerType& StackContainerType);
-	void		 RemoveWidgetFromStack(UCoreWidget* Widget, const EWidgetContainerType& StackContainerType, bool Destroy = false);
+	void RemoveWidgetFromStack(UCoreWidget* Widget, const EWidgetContainerType& StackContainerType, bool Destroy = false);
 
 	/** Navigate back to the previous page in history. */
 	void GoBack();

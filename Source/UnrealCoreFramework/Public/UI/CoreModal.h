@@ -131,5 +131,3 @@ private:
 	/** True when ShowAndWaitTask() is active — the coroutine handles hiding. */
 	bool bAwaitableMode = false;
 };
-
-

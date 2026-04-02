@@ -58,4 +58,3 @@ public:
 private:
 	TArray<FCoreTweenBuilder> Steps;
 };
-

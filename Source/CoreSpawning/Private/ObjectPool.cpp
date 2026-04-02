@@ -196,4 +196,3 @@ void FObjectPoolBase::ActivateActor(AActor* Actor)
 		Actor->SetActorTickEnabled(true);
 	}
 }
-

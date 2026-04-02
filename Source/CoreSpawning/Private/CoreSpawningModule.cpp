@@ -35,4 +35,3 @@ void FCoreSpawningModule::ShutdownModule()
 #undef LOCTEXT_NAMESPACE
 
 IMPLEMENT_MODULE(FCoreSpawningModule, CoreSpawning)
-

@@ -147,4 +147,3 @@ protected:
 	/** Active async load tasks, keyed by asset ID for cancellation on teardown */
 	TMap<FPrimaryAssetId, AsyncFlow::TTask<UDataAsset*>> ActiveLoadTasks;
 };
-

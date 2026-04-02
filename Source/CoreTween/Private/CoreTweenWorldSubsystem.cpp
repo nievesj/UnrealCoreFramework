@@ -102,8 +102,7 @@ void UCoreTweenWorldSubsystem::CompleteAll()
 
 void UCoreTweenWorldSubsystem::PruneFinished()
 {
-	ActiveTweenStates.RemoveAll([](const TSharedPtr<FCoreTweenState>& State)
-	{
+	ActiveTweenStates.RemoveAll([](const TSharedPtr<FCoreTweenState>& State) {
 		return State->bFinished.load(std::memory_order_acquire);
 	});
 }

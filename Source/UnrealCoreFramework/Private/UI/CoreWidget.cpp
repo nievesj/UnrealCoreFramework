@@ -241,4 +241,3 @@ void UCoreWidget::OnAnimationStarted(const EWidgetTransitionMode& TransitionMode
 void UCoreWidget::OnAnimationCompleted(const EWidgetTransitionMode& TransitionMode)
 {
 }
-

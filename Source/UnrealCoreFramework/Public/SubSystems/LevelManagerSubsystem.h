@@ -37,13 +37,13 @@ UENUM(BlueprintType)
 enum class ELevelLoadMethod : uint8
 {
 	Synchronous UMETA(DisplayName = "Synchronous"),
-	Async		UMETA(DisplayName = "Asynchronous")
+	Async UMETA(DisplayName = "Asynchronous")
 };
 
 UENUM(BlueprintType)
 enum class ELevelOperation : uint8
 {
-	Open   UMETA(DisplayName = "Open (Switch Level)"),
+	Open UMETA(DisplayName = "Open (Switch Level)"),
 	Stream UMETA(DisplayName = "Stream (Add Level)")
 };
 

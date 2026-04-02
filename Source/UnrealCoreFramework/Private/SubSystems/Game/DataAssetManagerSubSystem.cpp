@@ -115,7 +115,7 @@ UDataAsset* UDataAssetManagerSubsystem::LoadDataAssetByClass(const TSubclassOf<U
 	}
 
 	const FPrimaryAssetType AssetType = AssetClass->GetDefaultObject<UDataAsset>()->GetPrimaryAssetId().PrimaryAssetType;
-	const FPrimaryAssetId	AssetId(AssetType, FName(*AssetName));
+	const FPrimaryAssetId AssetId(AssetType, FName(*AssetName));
 
 	return LoadDataAssetByPrimaryAssetId(AssetId);
 }

@@ -139,4 +139,3 @@ struct CORETWEEN_API FCoreTweenEasing
 
 	static float SpringEase(float Alpha, float Damping = 0.5f);
 };
-

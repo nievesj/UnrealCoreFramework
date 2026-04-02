@@ -195,4 +195,3 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CoreTween")
 	static bool IsTweening(UWidget* Widget);
 };
-

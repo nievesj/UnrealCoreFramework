@@ -86,7 +86,10 @@ protected:
 	virtual void OnAnimationCompleted(const EWidgetTransitionMode& TransitionMode) override;
 
 	/** Whether animations should be played for this widget */
-	virtual bool ShouldPlayAnimations() const override { return true; }
+	virtual bool ShouldPlayAnimations() const override
+	{
+		return true;
+	}
 
 	virtual void NativeOnActivated() override;
 	virtual void NativeOnDeactivated() override;

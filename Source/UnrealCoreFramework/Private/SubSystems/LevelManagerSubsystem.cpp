@@ -187,5 +187,3 @@ bool ULevelManagerSubsystem::ValidateLevelPath(const FString& LevelPath)
 {
 	return !LevelPath.IsEmpty();
 }
-
-

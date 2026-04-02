@@ -61,8 +61,7 @@ public:
 
 		if (!WidgetClass->IsChildOf<T>())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("AddWidgetToStack: Widget class %s is not a child of %s"),
-				*WidgetClass->GetName(), *T::StaticClass()->GetName());
+			UE_LOG(LogTemp, Warning, TEXT("AddWidgetToStack: Widget class %s is not a child of %s"), *WidgetClass->GetName(), *T::StaticClass()->GetName());
 			return nullptr;
 		}
 

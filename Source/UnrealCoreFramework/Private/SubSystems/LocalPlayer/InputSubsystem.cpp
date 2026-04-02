@@ -35,4 +35,3 @@ void UInputSubsystem::Deinitialize()
 	UE_LOG(LogCoreInputSubsystem, Log, TEXT("Deinitializing Input Subsystem"));
 	Super::Deinitialize();
 }
-

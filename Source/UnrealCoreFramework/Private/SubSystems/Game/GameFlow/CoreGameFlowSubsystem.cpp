@@ -99,8 +99,7 @@ bool UCoreGameFlowSubsystem::RequestTransition(const FName TargetState)
 
 	if (!IsTransitionValid(TargetState))
 	{
-		UE_LOG(LogGameFlow, Warning, TEXT("Invalid transition from [%s] to [%s]."),
-			*CurrentStateName.ToString(), *TargetState.ToString());
+		UE_LOG(LogGameFlow, Warning, TEXT("Invalid transition from [%s] to [%s]."), *CurrentStateName.ToString(), *TargetState.ToString());
 		return false;
 	}
 
@@ -177,4 +176,3 @@ UCoreGameFlowState* UCoreGameFlowSubsystem::CreateStateInstance(const FName Stat
 
 	return NewState;
 }
-

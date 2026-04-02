@@ -38,7 +38,7 @@ class UNREALCOREFRAMEWORK_API UCoreAudioEngineSubSystem : public UAudioEngineSub
 {
 	GENERATED_BODY()
 public:
-	virtual bool ShouldCreateSubsystem(UObject* Outer) const
+	virtual bool ShouldCreateSubsystem(UObject* Outer) const override
 	{
 		return true;
 	}

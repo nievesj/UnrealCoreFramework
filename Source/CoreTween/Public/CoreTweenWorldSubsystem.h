@@ -59,7 +59,10 @@ public:
 	void CompleteAll();
 
 	/** Accessor for the active tween states array. */
-	TArray<TSharedPtr<FCoreTweenState>>& GetActiveTweenStates() { return ActiveTweenStates; }
+	TArray<TSharedPtr<FCoreTweenState>>& GetActiveTweenStates()
+	{
+		return ActiveTweenStates;
+	}
 
 private:
 	/** Prune finished entries from the tracking array. */

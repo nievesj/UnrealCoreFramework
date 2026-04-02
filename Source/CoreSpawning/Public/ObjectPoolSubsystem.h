@@ -91,4 +91,3 @@ public:
 private:
 	TMap<FName, TUniquePtr<FObjectPoolBase>> Pools;
 };
-

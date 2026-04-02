@@ -44,4 +44,3 @@ public:
 	virtual void OnReleased_Implementation() override;
 	virtual void ResetToPool_Implementation() override;
 };
-

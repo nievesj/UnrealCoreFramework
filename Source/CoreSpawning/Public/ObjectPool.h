@@ -59,9 +59,18 @@ public:
 	/** Destroy all pooled and active actors. */
 	void DestroyAll(UWorld* World);
 
-	int32 GetActiveCount() const { return ActiveActors.Num(); }
-	int32 GetInactiveCount() const { return InactiveActors.Num(); }
-	TSubclassOf<AActor> GetActorClass() const { return ActorClass; }
+	int32 GetActiveCount() const
+	{
+		return ActiveActors.Num();
+	}
+	int32 GetInactiveCount() const
+	{
+		return InactiveActors.Num();
+	}
+	TSubclassOf<AActor> GetActorClass() const
+	{
+		return ActorClass;
+	}
 
 protected:
 	AActor* SpawnPooledActor(UWorld* World);
@@ -98,4 +107,3 @@ public:
 		ReleaseUntyped(Actor);
 	}
 };
-

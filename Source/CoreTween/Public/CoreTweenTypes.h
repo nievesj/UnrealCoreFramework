@@ -39,4 +39,3 @@ enum class ECoreTweenTimeSource : uint8
 	/** Wall-clock real time. Ignores pause and time dilation. */
 	RealTime
 };
-

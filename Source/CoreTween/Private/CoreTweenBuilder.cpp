@@ -44,24 +44,96 @@ FCoreTweenBuilder::FCoreTweenBuilder(
 
 // ── Property setters ────────────────────────────────────────────────
 
-FCoreTweenBuilder& FCoreTweenBuilder::FromTranslation(const FVector2D& Value) { TranslationProp.SetStart(Value); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::ToTranslation(const FVector2D& Value) { TranslationProp.SetTarget(Value); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::FromScale(const FVector2D& Value) { ScaleProp.SetStart(Value); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::ToScale(const FVector2D& Value) { ScaleProp.SetTarget(Value); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::FromOpacity(const float Value) { OpacityProp.SetStart(Value); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::ToOpacity(const float Value) { OpacityProp.SetTarget(Value); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::FromColor(const FLinearColor& Value) { ColorProp.SetStart(Value); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::ToColor(const FLinearColor& Value) { ColorProp.SetTarget(Value); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::FromRotation(const float Value) { RotationProp.SetStart(Value); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::ToRotation(const float Value) { RotationProp.SetTarget(Value); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::FromCanvasPosition(const FVector2D& Value) { CanvasPositionProp.SetStart(Value); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::ToCanvasPosition(const FVector2D& Value) { CanvasPositionProp.SetTarget(Value); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::FromPadding(const FMargin& Value) { PaddingProp.SetStart(FVector4(Value.Left, Value.Top, Value.Right, Value.Bottom)); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::ToPadding(const FMargin& Value) { PaddingProp.SetTarget(FVector4(Value.Left, Value.Top, Value.Right, Value.Bottom)); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::FromVisibility(const ESlateVisibility Value) { VisibilityProp.SetStart(Value); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::ToVisibility(const ESlateVisibility Value) { VisibilityProp.SetTarget(Value); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::FromMaxDesiredHeight(const float Value) { MaxDesiredHeightProp.SetStart(Value); return *this; }
-FCoreTweenBuilder& FCoreTweenBuilder::ToMaxDesiredHeight(const float Value) { MaxDesiredHeightProp.SetTarget(Value); return *this; }
+FCoreTweenBuilder& FCoreTweenBuilder::FromTranslation(const FVector2D& Value)
+{
+	TranslationProp.SetStart(Value);
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::ToTranslation(const FVector2D& Value)
+{
+	TranslationProp.SetTarget(Value);
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::FromScale(const FVector2D& Value)
+{
+	ScaleProp.SetStart(Value);
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::ToScale(const FVector2D& Value)
+{
+	ScaleProp.SetTarget(Value);
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::FromOpacity(const float Value)
+{
+	OpacityProp.SetStart(Value);
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::ToOpacity(const float Value)
+{
+	OpacityProp.SetTarget(Value);
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::FromColor(const FLinearColor& Value)
+{
+	ColorProp.SetStart(Value);
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::ToColor(const FLinearColor& Value)
+{
+	ColorProp.SetTarget(Value);
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::FromRotation(const float Value)
+{
+	RotationProp.SetStart(Value);
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::ToRotation(const float Value)
+{
+	RotationProp.SetTarget(Value);
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::FromCanvasPosition(const FVector2D& Value)
+{
+	CanvasPositionProp.SetStart(Value);
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::ToCanvasPosition(const FVector2D& Value)
+{
+	CanvasPositionProp.SetTarget(Value);
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::FromPadding(const FMargin& Value)
+{
+	PaddingProp.SetStart(FVector4(Value.Left, Value.Top, Value.Right, Value.Bottom));
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::ToPadding(const FMargin& Value)
+{
+	PaddingProp.SetTarget(FVector4(Value.Left, Value.Top, Value.Right, Value.Bottom));
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::FromVisibility(const ESlateVisibility Value)
+{
+	VisibilityProp.SetStart(Value);
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::ToVisibility(const ESlateVisibility Value)
+{
+	VisibilityProp.SetTarget(Value);
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::FromMaxDesiredHeight(const float Value)
+{
+	MaxDesiredHeightProp.SetStart(Value);
+	return *this;
+}
+FCoreTweenBuilder& FCoreTweenBuilder::ToMaxDesiredHeight(const float Value)
+{
+	MaxDesiredHeightProp.SetTarget(Value);
+	return *this;
+}
 
 // ── Configuration ───────────────────────────────────────────────────
 
@@ -255,8 +327,7 @@ AsyncFlow::TTask<void> FCoreTweenBuilder::Run(UObject* WorldContext)
 	FCoreTweenSignature LocalOnCompleteDelegate = MoveTemp(OnCompleteDelegate);
 
 	// Lambda that applies all active properties to the target
-	auto ApplyAllLocal = [&](float EasedAlpha)
-	{
+	auto ApplyAllLocal = [&](float EasedAlpha) {
 		if (!LocalTarget || !LocalTarget->IsTargetValid())
 		{
 			return;
@@ -465,4 +536,3 @@ AsyncFlow::TTask<void> FCoreTweenBuilder::Run(UObject* WorldContext)
 	TweenState->FlowState.Reset();
 	TweenState->bFinished.store(true, std::memory_order_release);
 }
-

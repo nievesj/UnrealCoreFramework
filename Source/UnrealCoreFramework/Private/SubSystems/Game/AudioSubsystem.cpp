@@ -35,4 +35,3 @@ void UAudioSubsystem::Deinitialize()
 	UE_LOG(LogCoreAudio, Log, TEXT("Deinitializing Audio Subsystem"));
 	Super::Deinitialize();
 }
-

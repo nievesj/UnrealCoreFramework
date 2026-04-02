@@ -35,4 +35,3 @@ void FCoreTweenModule::ShutdownModule()
 #undef LOCTEXT_NAMESPACE
 
 IMPLEMENT_MODULE(FCoreTweenModule, CoreTween)
-

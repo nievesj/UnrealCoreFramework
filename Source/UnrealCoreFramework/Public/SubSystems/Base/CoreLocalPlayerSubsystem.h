@@ -39,7 +39,7 @@ class UNREALCOREFRAMEWORK_API UCoreLocalPlayerSubsystem : public ULocalPlayerSub
 	GENERATED_BODY()
 
 public:
-	virtual bool ShouldCreateSubsystem(UObject* Outer) const
+	virtual bool ShouldCreateSubsystem(UObject* Outer) const override
 	{
 		return true;
 	}

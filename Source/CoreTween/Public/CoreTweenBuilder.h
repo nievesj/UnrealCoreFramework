@@ -50,7 +50,7 @@ class UObject;
 struct CORETWEEN_API FCoreTweenState
 {
 	/** Set by CompleteAll(). The coroutine loop checks this each tick. */
-	std::atomic<bool> bForceComplete{false};
+	std::atomic<bool> bForceComplete{ false };
 
 	/** The flow state of the TTask running this tween. Used for cancellation. */
 	TSharedPtr<AsyncFlow::FAsyncFlowState> FlowState;
@@ -59,7 +59,7 @@ struct CORETWEEN_API FCoreTweenState
 	TWeakObjectPtr<UWidget> Widget;
 
 	/** True once the coroutine has finished (naturally, cancelled, or force-completed). */
-	std::atomic<bool> bFinished{false};
+	std::atomic<bool> bFinished{ false };
 
 	/** Keeps the coroutine alive until completion. Cleared when finished. */
 	AsyncFlow::TTask<void> RunningTask;
@@ -149,4 +149,3 @@ private:
 	FCoreTweenSignature OnStartDelegate;
 	FCoreTweenSignature OnCompleteDelegate;
 };
-

@@ -28,49 +28,81 @@ float FCoreTweenEasing::Ease(const ECoreTweenEasingType Type, const float Alpha,
 {
 	switch (Type)
 	{
-		case ECoreTweenEasingType::Linear:        return Linear(Alpha);
+		case ECoreTweenEasingType::Linear:
+			return Linear(Alpha);
 
-		case ECoreTweenEasingType::EaseInQuad:    return InQuad(Alpha);
-		case ECoreTweenEasingType::EaseOutQuad:   return OutQuad(Alpha);
-		case ECoreTweenEasingType::EaseInOutQuad: return InOutQuad(Alpha);
+		case ECoreTweenEasingType::EaseInQuad:
+			return InQuad(Alpha);
+		case ECoreTweenEasingType::EaseOutQuad:
+			return OutQuad(Alpha);
+		case ECoreTweenEasingType::EaseInOutQuad:
+			return InOutQuad(Alpha);
 
-		case ECoreTweenEasingType::EaseInCubic:    return InCubic(Alpha);
-		case ECoreTweenEasingType::EaseOutCubic:   return OutCubic(Alpha);
-		case ECoreTweenEasingType::EaseInOutCubic: return InOutCubic(Alpha);
+		case ECoreTweenEasingType::EaseInCubic:
+			return InCubic(Alpha);
+		case ECoreTweenEasingType::EaseOutCubic:
+			return OutCubic(Alpha);
+		case ECoreTweenEasingType::EaseInOutCubic:
+			return InOutCubic(Alpha);
 
-		case ECoreTweenEasingType::EaseInQuart:    return InQuart(Alpha);
-		case ECoreTweenEasingType::EaseOutQuart:   return OutQuart(Alpha);
-		case ECoreTweenEasingType::EaseInOutQuart: return InOutQuart(Alpha);
+		case ECoreTweenEasingType::EaseInQuart:
+			return InQuart(Alpha);
+		case ECoreTweenEasingType::EaseOutQuart:
+			return OutQuart(Alpha);
+		case ECoreTweenEasingType::EaseInOutQuart:
+			return InOutQuart(Alpha);
 
-		case ECoreTweenEasingType::EaseInQuint:    return InQuint(Alpha);
-		case ECoreTweenEasingType::EaseOutQuint:   return OutQuint(Alpha);
-		case ECoreTweenEasingType::EaseInOutQuint: return InOutQuint(Alpha);
+		case ECoreTweenEasingType::EaseInQuint:
+			return InQuint(Alpha);
+		case ECoreTweenEasingType::EaseOutQuint:
+			return OutQuint(Alpha);
+		case ECoreTweenEasingType::EaseInOutQuint:
+			return InOutQuint(Alpha);
 
-		case ECoreTweenEasingType::EaseInExpo:    return InExpo(Alpha);
-		case ECoreTweenEasingType::EaseOutExpo:   return OutExpo(Alpha);
-		case ECoreTweenEasingType::EaseInOutExpo: return InOutExpo(Alpha);
+		case ECoreTweenEasingType::EaseInExpo:
+			return InExpo(Alpha);
+		case ECoreTweenEasingType::EaseOutExpo:
+			return OutExpo(Alpha);
+		case ECoreTweenEasingType::EaseInOutExpo:
+			return InOutExpo(Alpha);
 
-		case ECoreTweenEasingType::EaseInSine:    return InSine(Alpha);
-		case ECoreTweenEasingType::EaseOutSine:   return OutSine(Alpha);
-		case ECoreTweenEasingType::EaseInOutSine: return InOutSine(Alpha);
+		case ECoreTweenEasingType::EaseInSine:
+			return InSine(Alpha);
+		case ECoreTweenEasingType::EaseOutSine:
+			return OutSine(Alpha);
+		case ECoreTweenEasingType::EaseInOutSine:
+			return InOutSine(Alpha);
 
-		case ECoreTweenEasingType::EaseInCirc:    return InCirc(Alpha);
-		case ECoreTweenEasingType::EaseOutCirc:   return OutCirc(Alpha);
-		case ECoreTweenEasingType::EaseInOutCirc: return InOutCirc(Alpha);
+		case ECoreTweenEasingType::EaseInCirc:
+			return InCirc(Alpha);
+		case ECoreTweenEasingType::EaseOutCirc:
+			return OutCirc(Alpha);
+		case ECoreTweenEasingType::EaseInOutCirc:
+			return InOutCirc(Alpha);
 
-		case ECoreTweenEasingType::EaseInBack:    return InBack(Alpha, Param.Get(1.70158f));
-		case ECoreTweenEasingType::EaseOutBack:   return OutBack(Alpha, Param.Get(1.70158f));
-		case ECoreTweenEasingType::EaseInOutBack: return InOutBack(Alpha, Param.Get(1.70158f));
+		case ECoreTweenEasingType::EaseInBack:
+			return InBack(Alpha, Param.Get(1.70158f));
+		case ECoreTweenEasingType::EaseOutBack:
+			return OutBack(Alpha, Param.Get(1.70158f));
+		case ECoreTweenEasingType::EaseInOutBack:
+			return InOutBack(Alpha, Param.Get(1.70158f));
 
-		case ECoreTweenEasingType::EaseInElastic:    return InElastic(Alpha, Param.Get(1.0f));
-		case ECoreTweenEasingType::EaseOutElastic:   return OutElastic(Alpha, Param.Get(1.0f));
-		case ECoreTweenEasingType::EaseInOutElastic: return InOutElastic(Alpha, Param.Get(1.0f));
+		case ECoreTweenEasingType::EaseInElastic:
+			return InElastic(Alpha, Param.Get(1.0f));
+		case ECoreTweenEasingType::EaseOutElastic:
+			return OutElastic(Alpha, Param.Get(1.0f));
+		case ECoreTweenEasingType::EaseInOutElastic:
+			return InOutElastic(Alpha, Param.Get(1.0f));
 
-		case ECoreTweenEasingType::EaseInBounce:    return InBounce(Alpha);
-		case ECoreTweenEasingType::EaseOutBounce:   return OutBounce(Alpha);
-		case ECoreTweenEasingType::EaseInOutBounce: return InOutBounce(Alpha);
+		case ECoreTweenEasingType::EaseInBounce:
+			return InBounce(Alpha);
+		case ECoreTweenEasingType::EaseOutBounce:
+			return OutBounce(Alpha);
+		case ECoreTweenEasingType::EaseInOutBounce:
+			return InOutBounce(Alpha);
 
-		case ECoreTweenEasingType::Spring: return SpringEase(Alpha, Param.Get(0.5f));
+		case ECoreTweenEasingType::Spring:
+			return SpringEase(Alpha, Param.Get(0.5f));
 
 		default:
 			return Alpha;
@@ -394,4 +426,3 @@ float FCoreTweenEasing::SpringEase(const float Alpha, const float Damping)
 	const float Decay = FMath::Exp(-ClampedDamping * Frequency * Alpha);
 	return 1.0f - Decay * FMath::Cos(Frequency * (1.0f - ClampedDamping) * Alpha);
 }
-
