@@ -53,7 +53,7 @@ public:
 	virtual void OnWorldComponentsUpdated(UWorld& World) override;
 
 	/** Updates sub-system required streaming levels (called by world's UpdateStreamingState function) */
-	virtual void UpdateStreamingState() override;
+	virtual void UpdateStreamingState();
 
 	/** Implement this for deinitialization of instances of the system */
 	virtual void Deinitialize() override;
